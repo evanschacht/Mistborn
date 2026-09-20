@@ -1,0 +1,72 @@
+{
+  "date": "2026-09-20",
+  "environment": "Roblox Studio live client physics; gravity 196.2",
+  "checks": [
+    {
+      "data": {
+        "start": 50,
+        "metalY": 0,
+        "finish": 7.489991188049316
+      },
+      "name": "Horizontal metal retains jump gravity sign 1",
+      "pass": true
+    },
+    {
+      "data": {
+        "start": 50,
+        "metalY": 0,
+        "finish": 7.489991188049316
+      },
+      "name": "Horizontal metal retains jump gravity sign -1",
+      "pass": true
+    },
+    {
+      "data": {
+        "gravity": 196.1999969482422,
+        "vy": 9.013254165649414
+      },
+      "name": "Vertical metal lifts against gravity sign 1",
+      "pass": true
+    },
+    {
+      "data": {
+        "gravity": 196.1999969482422,
+        "vy": 8.872469902038574
+      },
+      "name": "Vertical metal lifts against gravity sign -1",
+      "pass": true
+    },
+    {
+      "data": {
+        "before": 8.872469902038574,
+        "after": -30.367517471313477
+      },
+      "name": "Release immediately resumes ballistic fall",
+      "pass": true
+    },
+    {
+      "data": {
+        "vy": -42.5099983215332,
+        "metalForce": 0
+      },
+      "name": "Opposing metal forces cancel but gravity remains",
+      "pass": true
+    },
+    {
+      "data": {
+        "rise": 0.0014810562133789062
+      },
+      "name": "Shallow pull stays on ground",
+      "pass": true
+    },
+    {
+      "data": {
+        "rise": 2.246380567550659
+      },
+      "name": "Static elevated anchor lifts as angle steepens",
+      "pass": true
+    }
+  ],
+  "speedRegressionChecksPassed": 16,
+  "tuningRegressionChecksPassed": 25
+}

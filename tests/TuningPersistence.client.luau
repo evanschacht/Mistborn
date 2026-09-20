@@ -10,12 +10,12 @@ check("Save below Reset All",gui.Panel.Content.Save.Position.Y.Offset>gui.Panel.
 for _,spec in motion.SettingSpecs do
  check("Reset button: "..spec.key,gui.Panel.Content.Sliders[spec.key]:FindFirstChild("ResetDefault")~=nil)
 end
-motion.SetRange("HeldDrag",0,30)
-motion.SetSetting("HeldDrag",8)
+motion.SetRange("CoastDrag",0,30)
+motion.SetSetting("CoastDrag",8)
 local other=motion.Settings.PullAcceleration
-motion.ResetSetting("HeldDrag")
-local low,high=motion.GetRange("HeldDrag")
-check("Individual reset restores original value and range",motion.Settings.HeldDrag==1.2 and low==0 and high==5)
+motion.ResetSetting("CoastDrag")
+local low,high=motion.GetRange("CoastDrag")
+check("Individual reset restores original value and range",motion.Settings.CoastDrag==2.3 and low==0 and high==8)
 check("Individual reset preserves other sliders",motion.Settings.PullAcceleration==other)
 motion.ResetSettings()
 for _,spec in motion.SettingSpecs do

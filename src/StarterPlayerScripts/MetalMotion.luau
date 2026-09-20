@@ -98,7 +98,7 @@ local targets={}
 local root,humanoid,attachment,actuator
 local moving=false
 local active=false
-local heldDuration=0
+
 local groundCommand
 
 local previousAutoRotate
@@ -117,7 +117,7 @@ function Motion.Cancel()
  groundCommand=nil
  SlidePose.Clear()
  active=false
- heldDuration=0
+
  moving=false
  table.clear(targets)
  if actuator then actuator:Destroy() actuator=nil end
@@ -154,7 +154,7 @@ function Motion.Start(part,directionSign)
   actuator.Force=Vector3.zero
   actuator.Parent=root
  end
- if not active then heldDuration=0 end
+
  targets[directionSign==1 and 1 or -1]=part
  active=true
  moving=true
@@ -170,7 +170,7 @@ function Motion.Stop(directionSign)
  if not moving then return end
  if directionSign then targets[directionSign]=nil else table.clear(targets) end
  active=next(targets)~=nil
- if not active then heldDuration=0 end
+
 
  report()
 end
@@ -209,42 +209,18 @@ RunService.PreSimulation:Connect(function(dt)
    acceleration+=direction*thrust
   end
  end
- -- Sustained metal use gradually supports weight and brakes downward drift.
- -- Releasing the last key removes this assistance immediately.
- if active then
-  heldDuration+=dt
-  if humanoid.FloorMaterial==Enum.Material.Air then
-   local blend=math.clamp(heldDuration/Motion.Settings.GravityBlend,0,1)
-   blend=blend*blend*(3-2*blend)
-   local assistance,count=0,0
-   if targets[1] then assistance+=Motion.Settings.PullGravity count+=1 end
-   if targets[-1] then assistance+=Motion.Settings.PushGravity count+=1 end
-   local support=workspace.Gravity*(assistance/math.max(count,1))/100
-
-   local resultant=Motion.Resultant(root.Position,targets[1] and targets[1].Position,targets[-1] and targets[-1].Position)
-   local drift=current
-   if resultant.Magnitude>0.01 then
-    local axis=resultant.Unit
-    drift=current-axis*current:Dot(axis)
-   end
-   -- Brake off-axis momentum, never oppose an intentional downward pull.
-   acceleration+=Vector3.new(0,support*blend,0)-drift*Motion.Settings.FallBraking*blend
-
-  end
+ -- Release the Humanoid's floor constraint when actual upward thrust beats
+ -- gravity. Freefall adds no jump impulse; VectorForce performs the lift.
+ if grounded and acceleration.Y>workspace.Gravity then
+  humanoid:ChangeState(Enum.HumanoidStateType.Freefall)
+  grounded=false
  end
- -- Horizontal drag gives a short slide while released vertical motion falls naturally.
-
+ -- Roblox applies gravity continuously. Metal thrust contains only the current
+ -- anchor direction; no weight support or vertical/off-axis velocity damping.
  local horizontal=Vector3.new(current.X,0,current.Z)
- if not grounded then
-  if active then
-   -- Resist drift perpendicular to propulsion, without lowering its terminal speed.
-   local axis=acceleration.Magnitude>0.01 and acceleration.Unit or Vector3.zero
-   acceleration-=(current-axis*current:Dot(axis))*Motion.Settings.HeldDrag
-  else
-   acceleration-=horizontal*Motion.Settings.CoastDrag
-  end
+ if not grounded and not active then
+  acceleration-=horizontal*Motion.Settings.CoastDrag
  end
-
  if grounded then
   -- Integrate the commanded speed rather than accumulating Humanoid friction losses.
   -- A substantial collision/deflection resets the command to actual motion.
@@ -267,7 +243,7 @@ RunService.PreSimulation:Connect(function(dt)
 
  end
  actuator.Force=acceleration*root.AssemblyMass
- SlidePose.Step(root.Parent,humanoid,root,humanoid.FloorMaterial~=Enum.Material.Air,slideDirection,targets[1],targets[-1])
+ SlidePose.Step(root.Parent,humanoid,root,grounded,slideDirection,targets[1],targets[-1])
 
  if not active and ((grounded and horizontal.Magnitude<=0.001) or (not grounded and horizontal.Magnitude<1)) then Motion.Cancel() end
 
