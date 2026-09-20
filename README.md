@@ -9,6 +9,7 @@ Open `Mistborn-Anchor-Prototype.rbxl` in Roblox Studio and press Play. This cont
 ## Controls
 
 - Hover near a blue cube to select it. Selection stays highlighted when the cursor moves away.
+- Lines, selection, and push/pull reach 60 studs from the character center to the anchor center. Leaving range clears the selection and stops force from that anchor; returning requires a new key press.
 - Hold **Q** to push away from the hovered cube.
 - Hold **E** to pull toward the hovered cube.
 - Each key locks its own target until released. Hold both to combine forces and steer.

@@ -2,6 +2,12 @@ local Players=game:GetService("Players")
 local RunService=game:GetService("RunService")
 local player=Players.LocalPlayer
 local Motion={}
+Motion.AnchorRange=60 -- Studs from the character center to the anchor center.
+function Motion.IsInRange(part,position)
+ if not part or not part:IsA("BasePart") or part.Parent~=workspace:FindFirstChild("MetalAnchors") then return false end
+ local distance=(part.Position-position).Magnitude
+ return distance>0.1 and distance<=Motion.AnchorRange
+end
 Motion.SettingSpecs={
  {key="PullAcceleration",title="Pull acceleration",min=50,max=800,step=10,default=340,unit=" studs/s²",hint="How strongly E accelerates you."},
  {key="PushAcceleration",title="Push acceleration",min=50,max=800,step=10,default=340,unit=" studs/s²",hint="How strongly Q accelerates you."},
@@ -76,6 +82,7 @@ function Motion.Start(part,directionSign)
  local newRoot=character and character:FindFirstChild("HumanoidRootPart")
  local newHumanoid=character and character:FindFirstChildOfClass("Humanoid")
  if not newRoot or not newHumanoid or newHumanoid.Health<=0 then return false end
+ if not Motion.IsInRange(part,newRoot.Position) then return false end
  if moving and root~=newRoot then Motion.Cancel() end
  root=newRoot
  humanoid=newHumanoid
@@ -125,7 +132,7 @@ RunService.PreSimulation:Connect(function(dt)
  if not moving then return end
  if not root or not root.Parent or not humanoid or humanoid.Health<=0 then Motion.Cancel() return end
  for directionSign,part in pairs(targets) do
-  if part.Parent~=workspace:FindFirstChild("MetalAnchors") then Motion.Stop(directionSign) end
+  if not Motion.IsInRange(part,root.Position) then Motion.Stop(directionSign) end
  end
  local current=root.AssemblyLinearVelocity
  local acceleration=Vector3.zero

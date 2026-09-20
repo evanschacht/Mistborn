@@ -103,9 +103,14 @@ end)
 if player.Character then task.spawn(bindCharacter,player.Character) end
 RunService.RenderStepped:Connect(function()
  if not root or not root.Parent then return end
+ if selected and not Motion.IsInRange(selected,root.Position) then selectAnchor(nil) end
+ if hovered and not Motion.IsInRange(hovered,root.Position) then
+  hovered=nil
+  effects:SetAttribute("HoveredAnchor","")
+ end
  for part,entry in pairs(entries) do
   local delta=part.Position-root.Position
-  local enabled=delta.Magnitude>0.1
+  local enabled=Motion.IsInRange(part,root.Position)
   if enabled then
    local direction=delta.Unit
    local reference=math.abs(direction.Y)>0.98 and Vector3.xAxis or Vector3.yAxis
@@ -147,7 +152,7 @@ RunService.RenderStepped:Connect(function()
  local best,bestScore
  for part in pairs(entries) do
   local center,onScreen=camera:WorldToViewportPoint(part.Position)
-  if onScreen and center.Z>0 then
+  if onScreen and center.Z>0 and Motion.IsInRange(part,root.Position) then
    local low=Vector2.new(math.huge,math.huge)
    local high=Vector2.new(-math.huge,-math.huge)
    local allInFront=true
