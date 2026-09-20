@@ -1,4 +1,5 @@
 local Players=game:GetService("Players")
+local RunService=game:GetService("RunService")
 local UIS=game:GetService("UserInputService")
 local Motion=require(script.Parent:WaitForChild("MetalMotion"))
 local screen=Instance.new("ScreenGui")
@@ -19,14 +20,40 @@ make("UIStroke",{Color=Color3.fromRGB(58,90,116),Transparency=0.35},panel)
 local header=make("TextButton",{Name="Collapse",Size=UDim2.new(1,0,0,42),BackgroundTransparency=1,Text="METAL TUNING   −",TextColor3=Color3.fromRGB(177,226,255),Font=Enum.Font.GothamBold,TextSize=15},panel)
 local content=make("Frame",{Name="Content",Position=UDim2.fromOffset(0,42),Size=UDim2.new(1,0,1,-42),BackgroundTransparency=1},panel)
 make("TextLabel",{Size=UDim2.new(1,-24,0,34),Position=UDim2.fromOffset(12,0),BackgroundTransparency=1,Text="Live changes • this play session\nQ push  /  E pull",TextColor3=Color3.fromRGB(165,178,195),Font=Enum.Font.Gotham,TextSize=11,TextXAlignment=Enum.TextXAlignment.Left},content)
-local list=make("ScrollingFrame",{Name="Sliders",Position=UDim2.fromOffset(12,40),Size=UDim2.new(1,-24,1,-88),BackgroundTransparency=1,BorderSizePixel=0,ScrollBarThickness=3,ScrollBarImageColor3=Color3.fromRGB(94,193,255),CanvasSize=UDim2.fromOffset(0,0),AutomaticCanvasSize=Enum.AutomaticSize.Y},content)
+local speedometer=make("Frame",{Name="Speedometer",AnchorPoint=Vector2.new(1,1),Position=UDim2.new(1,-18,1,-18),Size=UDim2.fromOffset(108,108),BackgroundColor3=Color3.fromRGB(17,24,36),BackgroundTransparency=0.12,BorderSizePixel=0,Visible=false},screen)
+make("UICorner",{CornerRadius=UDim.new(1,0)},speedometer)
+make("UIStroke",{Color=Color3.fromRGB(95,202,255),Thickness=2,Transparency=0.25},speedometer)
+local speedText=make("TextLabel",{Name="Speed",Position=UDim2.fromOffset(4,20),Size=UDim2.new(1,-8,0,44),BackgroundTransparency=1,Text="0",TextColor3=Color3.fromRGB(233,245,255),Font=Enum.Font.GothamBold,TextSize=32,TextScaled=true},speedometer)
+make("TextLabel",{Position=UDim2.fromOffset(0,68),Size=UDim2.new(1,0,0,20),BackgroundTransparency=1,Text="studs / second",TextColor3=Color3.fromRGB(165,207,228),Font=Enum.Font.Gotham,TextSize=10},speedometer)
+local speedToggle=make("TextButton",{Name="SpeedometerToggle",Position=UDim2.fromOffset(12,35),Size=UDim2.new(1,-24,0,26),BackgroundColor3=Color3.fromRGB(39,57,77),Text="Speedometer: OFF",TextColor3=Color3.fromRGB(220,233,245),Font=Enum.Font.GothamMedium,TextSize=12,BorderSizePixel=0},content)
+make("UICorner",{CornerRadius=UDim.new(0,6)},speedToggle)
+screen:SetAttribute("ShowSpeedometer",false)
+local function showSpeedometer()
+ local on=screen:GetAttribute("ShowSpeedometer")==true
+ speedometer.Visible=on speedToggle.Text=on and "Speedometer: ON" or "Speedometer: OFF"
+ speedToggle.BackgroundColor3=on and Color3.fromRGB(31,99,133) or Color3.fromRGB(39,57,77)
+end
+screen:GetAttributeChangedSignal("ShowSpeedometer"):Connect(showSpeedometer)
+speedToggle.Activated:Connect(function() screen:SetAttribute("ShowSpeedometer",not speedometer.Visible) end)
+local elapsed=0
+local speedConnection=RunService.RenderStepped:Connect(function(dt)
+ elapsed+=dt
+ if elapsed<0.1 or not speedometer.Visible then return end
+ elapsed=0
+ local c=Players.LocalPlayer.Character local r=c and c:FindFirstChild("HumanoidRootPart")
+ local speed=r and r.AssemblyLinearVelocity.Magnitude or 0
+ speedText.Text=string.format("%.0f",speed)
+ speedometer:SetAttribute("Speed",speed)
+end)
+script.Destroying:Connect(function() speedConnection:Disconnect() screen:Destroy() end)
+local list=make("ScrollingFrame",{Name="Sliders",Position=UDim2.fromOffset(12,68),Size=UDim2.new(1,-24,1,-112),BackgroundTransparency=1,BorderSizePixel=0,ScrollBarThickness=3,ScrollBarImageColor3=Color3.fromRGB(94,193,255),CanvasSize=UDim2.fromOffset(0,0),AutomaticCanvasSize=Enum.AutomaticSize.Y},content)
 make("UIListLayout",{Padding=UDim.new(0,6),SortOrder=Enum.SortOrder.LayoutOrder},list)
 local drag
 local updates={}
 for index,spec in Motion.SettingSpecs do
- local row=make("Frame",{Name=spec.key,Size=UDim2.new(1,-8,0,88),LayoutOrder=index,BackgroundTransparency=1},list)
+ local row=make("Frame",{Name=spec.key,Size=UDim2.new(1,-8,0,126),LayoutOrder=index,BackgroundTransparency=1},list)
  make("TextLabel",{Size=UDim2.new(1,0,0,20),BackgroundTransparency=1,Text=spec.title,TextColor3=Color3.fromRGB(233,239,246),TextSize=13,Font=Enum.Font.GothamMedium,TextXAlignment=Enum.TextXAlignment.Left},row)
- local value=make("TextLabel",{Position=UDim2.fromOffset(0,21),Size=UDim2.new(1,0,0,17),BackgroundTransparency=1,TextColor3=Color3.fromRGB(95,202,255),Font=Enum.Font.Gotham,TextSize=12,TextXAlignment=Enum.TextXAlignment.Left},row)
+ local value=make("TextBox",{Name="Value",ClearTextOnFocus=false,Position=UDim2.fromOffset(0,21),Size=UDim2.new(1,0,0,20),BackgroundColor3=Color3.fromRGB(28,40,55),BorderSizePixel=0,TextColor3=Color3.fromRGB(95,202,255),Font=Enum.Font.Gotham,TextSize=12,TextXAlignment=Enum.TextXAlignment.Left},row)
  local hit=make("TextButton",{Name="Slider",Position=UDim2.fromOffset(0,39),Size=UDim2.new(1,0,0,24),Text="",AutoButtonColor=false,BackgroundTransparency=1},row)
  local track=make("Frame",{Name="Track",Position=UDim2.new(0,7,0.5,-3),Size=UDim2.new(1,-14,0,6),BackgroundColor3=Color3.fromRGB(48,64,83),BorderSizePixel=0},hit)
  make("UICorner",{CornerRadius=UDim.new(1,0)},track)
@@ -34,19 +61,38 @@ for index,spec in Motion.SettingSpecs do
  make("UICorner",{CornerRadius=UDim.new(1,0)},fill)
  local knob=make("Frame",{Name="Knob",AnchorPoint=Vector2.new(0.5,0.5),Position=UDim2.fromScale(0,0.5),Size=UDim2.fromOffset(14,14),BackgroundColor3=Color3.fromRGB(185,233,255),BorderSizePixel=0},track)
  make("UICorner",{CornerRadius=UDim.new(1,0)},knob)
- make("TextLabel",{Position=UDim2.fromOffset(0,64),Size=UDim2.new(1,0,0,24),BackgroundTransparency=1,Text=spec.hint,TextWrapped=true,TextColor3=Color3.fromRGB(155,168,186),TextSize=10,Font=Enum.Font.Gotham,TextXAlignment=Enum.TextXAlignment.Left,TextYAlignment=Enum.TextYAlignment.Top},row)
+ make("TextLabel",{Position=UDim2.fromOffset(0,99),Size=UDim2.new(1,0,0,27),BackgroundTransparency=1,Text=spec.hint,TextWrapped=true,TextColor3=Color3.fromRGB(155,168,186),TextSize=10,Font=Enum.Font.Gotham,TextXAlignment=Enum.TextXAlignment.Left,TextYAlignment=Enum.TextYAlignment.Top},row)
+ local function rangeBox(name,x)
+  make("TextLabel",{Position=UDim2.new(x,0,0,67),Size=UDim2.new(0.14,0,0,24),BackgroundTransparency=1,Text=name,Font=Enum.Font.Gotham,TextSize=10,TextColor3=Color3.fromRGB(155,168,186),TextXAlignment=Enum.TextXAlignment.Left},row)
+  return make("TextBox",{Name=name,ClearTextOnFocus=false,Position=UDim2.new(x+0.14,0,0,67),Size=UDim2.new(0.33,0,0,24),BackgroundColor3=Color3.fromRGB(28,40,55),BorderSizePixel=0,TextColor3=Color3.fromRGB(214,231,242),Font=Enum.Font.Gotham,TextSize=12},row)
+ end
+ local minBox,maxBox=rangeBox("Min",0),rangeBox("Max",0.51)
  local function refresh()
   local v=Motion.Settings[spec.key]
-  local fraction=(v-spec.min)/(spec.max-spec.min)
+  local low,high=Motion.GetRange(spec.key)
+  local fraction=math.clamp((v-low)/(high-low),0,1)
+  minBox.Text=tostring(low) maxBox.Text=tostring(high)
   fill.Size=UDim2.fromScale(fraction,1)
   knob.Position=UDim2.fromScale(fraction,0.5)
-  value.Text=string.format(spec.step>=1 and "%.0f%s" or "%.2f%s",v,spec.unit)
+  value.Text=tostring(v)
+  value.PlaceholderText=spec.unit
   row:SetAttribute("Value",v)
  end
+ value.FocusLost:Connect(function() Motion.SetSetting(spec.key,tonumber(value.Text)) refresh() end)
+ local function changeRange()
+  local valid=Motion.SetRange(spec.key,tonumber(minBox.Text),tonumber(maxBox.Text))
+  refresh()
+  if not valid then
+   minBox.TextColor3=Color3.fromRGB(255,135,135) maxBox.TextColor3=minBox.TextColor3
+   task.delay(1,function() if minBox.Parent then minBox.TextColor3=Color3.fromRGB(214,231,242) maxBox.TextColor3=minBox.TextColor3 end end)
+  end
+ end
+ minBox.FocusLost:Connect(changeRange) maxBox.FocusLost:Connect(changeRange)
  updates[spec.key]=refresh
  local function setAt(x)
   local fraction=math.clamp((x-track.AbsolutePosition.X)/track.AbsoluteSize.X,0,1)
-  Motion.SetSetting(spec.key,spec.min+fraction*(spec.max-spec.min))
+  local low,high=Motion.GetRange(spec.key)
+  Motion.SetSetting(spec.key,low+fraction*(high-low))
   refresh()
  end
  hit.InputBegan:Connect(function(input)

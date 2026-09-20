@@ -1,0 +1,91 @@
+{
+  "checks": [
+    {
+      "data": 400,
+      "name": "50 acceleration reaches 400 in 8 seconds",
+      "pass": true
+    },
+    {
+      "name": "Stop cutoff snaps remaining slide to zero",
+      "pass": true
+    },
+    {
+      "name": "Zero friction preserves coast speed",
+      "pass": true
+    },
+    {
+      "name": "Friction slows coast",
+      "pass": true
+    },
+    {
+      "name": "Editable range",
+      "pass": true
+    },
+    {
+      "name": "Reject reversed range",
+      "pass": true
+    },
+    {
+      "name": "Reject nonfinite",
+      "pass": true
+    },
+    {
+      "data": {
+        "early": 10.006592750549316,
+        "final": 99.99999237060547
+      },
+      "name": "Live top speed accel 20 friction 2.3 sign 1",
+      "pass": true
+    },
+    {
+      "name": "Coast retains slide",
+      "pass": true
+    },
+    {
+      "data": {
+        "early": 47.99924850463867,
+        "final": 100
+      },
+      "name": "Live top speed accel 100 friction 8 sign 1",
+      "pass": true
+    },
+    {
+      "name": "Coast retains slide",
+      "pass": true
+    },
+    {
+      "data": {
+        "early": 61.79941940307617,
+        "final": 100
+      },
+      "name": "Live top speed accel 100 friction 2.3 sign -1",
+      "pass": true
+    },
+    {
+      "name": "Coast retains slide",
+      "pass": true
+    },
+    {
+      "data": 0.000006587837106053485,
+      "name": "Live cutoff",
+      "pass": true
+    },
+    {
+      "name": "Speedometer enabled",
+      "pass": true
+    },
+    {
+      "name": "11 sliders with min/max boxes",
+      "pass": true
+    }
+  ],
+  "live50Acceleration400Cap": {
+    "speed": 400,
+    "coastAfter": 400,
+    "coastBefore": 400
+  },
+  "manualMaxBox": {
+    "entered": 800,
+    "observed": 800
+  }
+}

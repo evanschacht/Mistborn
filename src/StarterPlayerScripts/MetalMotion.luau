@@ -12,14 +12,15 @@ end
 Motion.SettingSpecs={
  {key="PullAcceleration",title="Pull acceleration",min=50,max=800,step=10,default=340,unit=" studs/s²",hint="How strongly E accelerates you."},
  {key="PushAcceleration",title="Push acceleration",min=50,max=800,step=10,default=340,unit=" studs/s²",hint="How strongly Q accelerates you."},
- {key="PullSpeed",title="Pull speed target",min=20,max=400,step=5,default=160,unit=" studs/s",hint="Pull thrust fades near this speed."},
- {key="PushSpeed",title="Push speed target",min=20,max=400,step=5,default=160,unit=" studs/s",hint="Push thrust fades near this speed."},
+ {key="PullSpeed",title="Pull top speed",min=20,max=400,step=5,default=160,unit=" studs/s",hint="Maximum powered slide speed; acceleration sets how fast you reach it."},
+ {key="PushSpeed",title="Push top speed",min=20,max=400,step=5,default=160,unit=" studs/s",hint="Maximum powered slide speed; acceleration sets how fast you reach it."},
  {key="PullGravity",title="Pull gravity assistance",min=0,max=100,step=1,default=98,unit="%",hint="0 = full gravity; 100 = full weight support."},
  {key="PushGravity",title="Push gravity assistance",min=0,max=100,step=1,default=98,unit="%",hint="With both held, the two settings are averaged."},
  {key="GravityBlend",title="Gravity assistance buildup",min=0.1,max=4,step=0.1,default=1.5,unit=" s",hint="Time for weight support to reach full strength."},
  {key="FallBraking",title="Off-direction momentum braking",min=0,max=12,step=0.25,default=5,unit="",hint="Removes drift sideways to the combined force."},
- {key="HeldDrag",title="Drag while pushing / pulling",min=0,max=5,step=0.1,default=1.2,unit="",hint="Equal resistance in all movement directions."},
- {key="CoastDrag",title="Slowdown after release",min=0.1,max=8,step=0.1,default=2.3,unit="",hint="Higher values shorten your glide and slide."},
+ {key="HeldDrag",title="Airborne drag",min=0,max=5,step=0.1,default=1.2,unit="",hint="Airborne drift resistance; does not limit powered ground speed."},
+ {key="CoastDrag",title="Slide friction",min=0,max=8,step=0.1,default=2.3,unit="",hint="Resistance while coasting after release. 0 = no slide friction."},
+ {key="StopSpeed",title="Slide stop cutoff",min=0,max=30,step=0.5,default=5,unit=" studs/s",hint="Released ground slides snap to zero below this speed."},
 }
 -- Attributes share live values across UI, controller, and Studio inspection contexts.
 Motion.Settings=setmetatable({},{
@@ -30,18 +31,51 @@ for _,spec in Motion.SettingSpecs do
  if script:GetAttribute(spec.key)==nil then Motion.Settings[spec.key]=spec.default end
 end
 
+local function finite(n) return typeof(n)=="number" and n==n and math.abs(n)<math.huge end
+function Motion.GetRange(key)
+ for _,spec in Motion.SettingSpecs do
+  if spec.key==key then return script:GetAttribute(key.."Min") or spec.min,script:GetAttribute(key.."Max") or spec.max end
+ end
+end
 function Motion.SetSetting(key,value)
  for _,spec in Motion.SettingSpecs do
-  if spec.key==key and typeof(value)=="number" and value==value then
-   value=math.clamp(value,spec.min,spec.max)
-   value=math.clamp(math.floor(value/spec.step+0.5)*spec.step,spec.min,spec.max)
-   Motion.Settings[key]=value
-   return value
+  if spec.key==key and finite(value) then
+   local low,high=Motion.GetRange(key)
+   value=math.clamp(math.floor(math.clamp(value,low,high)/spec.step+0.5)*spec.step,low,high)
+   Motion.Settings[key]=value return value
   end
  end
 end
+function Motion.SetRange(key,low,high)
+ if not finite(low) or not finite(high) or low>=high then return false end
+ for _,spec in Motion.SettingSpecs do
+  if spec.key==key then
+   local floor=key=="GravityBlend" and 0.01 or 0
+   local ceiling=(key=="PullGravity" or key=="PushGravity") and 100 or 10000
+   if low<floor or high>ceiling then return false end
+   script:SetAttribute(key.."Min",low) script:SetAttribute(key.."Max",high)
+   Motion.SetSetting(key,Motion.Settings[key])
+   return true
+  end
+ end
+ return false
+end
 function Motion.ResetSettings()
- for _,spec in Motion.SettingSpecs do Motion.Settings[spec.key]=spec.default end
+ for _,spec in Motion.SettingSpecs do
+  script:SetAttribute(spec.key.."Min",nil) script:SetAttribute(spec.key.."Max",nil)
+  Motion.Settings[spec.key]=spec.default
+ end
+end
+-- Constant acceleration until the cap; exponential coasting friction; independent stop cutoff.
+function Motion.StepGround(velocity,acceleration,dt,powered,cap,friction,cutoff)
+ if powered then
+  local nextVelocity=velocity+acceleration*dt
+  if nextVelocity.Magnitude>cap then nextVelocity=nextVelocity.Unit*cap end
+  return nextVelocity
+ end
+ local nextVelocity=velocity*math.exp(-friction*dt)
+ if nextVelocity.Magnitude<=cutoff then return Vector3.zero end
+ return nextVelocity
 end
 
 local targets={}
@@ -49,6 +83,7 @@ local root,humanoid,attachment,actuator
 local moving=false
 local active=false
 local heldDuration=0
+local groundCommand
 
 local previousAutoRotate
 local previousWalkSpeed
@@ -63,6 +98,7 @@ local function report()
  end
 end
 function Motion.Cancel()
+ groundCommand=nil
  SlidePose.Clear()
  active=false
  heldDuration=0
@@ -142,6 +178,8 @@ RunService.PreSimulation:Connect(function(dt)
  end
  local current=root.AssemblyLinearVelocity
  local acceleration=Vector3.zero
+ local grounded=humanoid.FloorMaterial~=Enum.Material.Air
+ local topSpeed=0
  for directionSign,part in pairs(targets) do
   local delta=part.Position-root.Position
   if delta.Magnitude>0.1 then
@@ -149,7 +187,8 @@ RunService.PreSimulation:Connect(function(dt)
    local along=current:Dot(direction)
    local strength=directionSign==1 and Motion.Settings.PullAcceleration or Motion.Settings.PushAcceleration
    local speed=directionSign==1 and Motion.Settings.PullSpeed or Motion.Settings.PushSpeed
-   local thrust=strength*math.clamp(1-math.max(along,0)/speed,0,1)
+   topSpeed=math.max(topSpeed,speed)
+   local thrust=grounded and strength or math.min(strength,math.max(speed-along,0)/math.max(dt,0.001))
 
    acceleration+=direction*thrust
   end
@@ -180,19 +219,33 @@ RunService.PreSimulation:Connect(function(dt)
  -- Horizontal drag gives a short slide while released vertical motion falls naturally.
 
  local horizontal=Vector3.new(current.X,0,current.Z)
- if active then
-  acceleration-=current*Motion.Settings.HeldDrag
- else
-  acceleration-=horizontal*Motion.Settings.CoastDrag
+ if not grounded then
+  if active then
+   -- Resist drift perpendicular to propulsion, without lowering its terminal speed.
+   local axis=acceleration.Magnitude>0.01 and acceleration.Unit or Vector3.zero
+   acceleration-=(current-axis*current:Dot(axis))*Motion.Settings.HeldDrag
+  else
+   acceleration-=horizontal*Motion.Settings.CoastDrag
+  end
  end
 
- if humanoid.FloorMaterial~=Enum.Material.Air then
-  -- Let the walking controller follow the slide instead of braking against it.
-  local groundVelocity=horizontal+Vector3.new(acceleration.X,0,acceleration.Z)*math.min(dt,0.1)
+ if grounded then
+  -- Integrate the commanded speed rather than accumulating Humanoid friction losses.
+  -- A substantial collision/deflection resets the command to actual motion.
+  if groundCommand and (groundCommand-horizontal).Magnitude>math.max(8,groundCommand.Magnitude*0.5) then groundCommand=nil end
+  local startVelocity=active and groundCommand or horizontal
+  local groundVelocity=Motion.StepGround(startVelocity or horizontal,Vector3.new(acceleration.X,0,acceleration.Z),dt,active,topSpeed,Motion.Settings.CoastDrag,Motion.Settings.StopSpeed)
+  groundCommand=active and groundVelocity or nil
+  -- Own only ground horizontal velocity; retain gravity, jumps and collision response.
+  root.AssemblyLinearVelocity=Vector3.new(groundVelocity.X,current.Y,groundVelocity.Z)
+  acceleration=Vector3.new(0,acceleration.Y,0)
+  horizontal=groundVelocity
   humanoid.WalkSpeed=groundVelocity.Magnitude
-  slideDirection=groundVelocity.Magnitude>0.1 and groundVelocity.Unit or Vector3.zero
+  slideDirection=groundVelocity.Magnitude>0 and groundVelocity.Unit or Vector3.zero
+  humanoid:Move(slideDirection,false)
  else
   -- Do not let default no-input air steering fight the metal-driven momentum.
+  groundCommand=nil
   humanoid.WalkSpeed=horizontal.Magnitude
   slideDirection=horizontal.Magnitude>0.1 and horizontal.Unit or Vector3.zero
 
@@ -200,7 +253,7 @@ RunService.PreSimulation:Connect(function(dt)
  actuator.Force=acceleration*root.AssemblyMass
  SlidePose.Step(root.Parent,humanoid,root,humanoid.FloorMaterial~=Enum.Material.Air,slideDirection,targets[1],targets[-1])
 
- if not active and horizontal.Magnitude<1 then Motion.Cancel() end
+ if not active and ((grounded and horizontal.Magnitude<=0.001) or (not grounded and horizontal.Magnitude<1)) then Motion.Cancel() end
 
 end)
 RunService:BindToRenderStep("MetalGroundSlide",Enum.RenderPriority.Input.Value+1,function()
