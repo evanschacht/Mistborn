@@ -46,6 +46,6 @@ r.CFrame=CFrame.new(0,5,0) r.AssemblyLinearVelocity=Vector3.zero
 p.PlayerGui.MetalTuning:SetAttribute("ShowSpeedometer",true)
 task.wait(.2)
 check("Speedometer enabled",p.PlayerGui.MetalTuning.Speedometer.Visible)
-check("11 sliders with min/max boxes",#p.PlayerGui.MetalTuning.Panel.Content.Sliders:GetChildren()==12 and p.PlayerGui.MetalTuning.Panel.Content.Sliders.PullSpeed:FindFirstChild("Min")~=nil)
+check("Sliders with min/max boxes",#p.PlayerGui.MetalTuning.Panel.Content.Sliders:GetChildren()==#m.SettingSpecs+1 and p.PlayerGui.MetalTuning.Panel.Content.Sliders.PullSpeed:FindFirstChild("Min")~=nil)
 workspace:SetAttribute("SpeedTuningTests",game.HttpService:JSONEncode(results))
 script:Destroy()

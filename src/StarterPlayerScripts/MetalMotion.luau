@@ -3,13 +3,13 @@ local RunService=game:GetService("RunService")
 local player=Players.LocalPlayer
 local Motion={}
 local SlidePose=require(script.Parent:WaitForChild("MetalSlidePose"))
-Motion.AnchorRange=180 -- Studs from the character center to the anchor center.
 function Motion.IsInRange(part,position)
  if not part or not part:IsA("BasePart") or part.Parent~=workspace:FindFirstChild("MetalAnchors") then return false end
  local distance=(part.Position-position).Magnitude
- return distance>0.1 and distance<=Motion.AnchorRange
+ return distance>0.1 and distance<=Motion.Settings.AnchorRange
 end
 Motion.SettingSpecs={
+ {key="AnchorRange",title="Steel and iron range",min=0,max=500,step=1,default=180,unit=" studs",hint="Reach of blue lines, selection and push/pull, in studs."},
  {key="PullAcceleration",title="Pull acceleration",min=50,max=800,step=10,default=340,unit=" studs/s²",hint="How strongly E accelerates you."},
  {key="PushAcceleration",title="Push acceleration",min=50,max=800,step=10,default=340,unit=" studs/s²",hint="How strongly Q accelerates you."},
  {key="PullSpeed",title="Pull top speed",min=20,max=400,step=5,default=160,unit=" studs/s",hint="Maximum powered slide speed; acceleration sets how fast you reach it."},
