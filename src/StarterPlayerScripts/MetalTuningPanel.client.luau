@@ -4,11 +4,13 @@ local UIS=game:GetService("UserInputService")
 local Motion=require(script.Parent:WaitForChild("MetalMotion"))
 local remote=game:GetService("ReplicatedStorage"):WaitForChild("MetalTuningPersistence",10)
 local loadMessage="Project preset loaded"
+local canSave=false
 if remote then
  local ok,response=pcall(function() return remote:InvokeServer("Load") end)
+ if ok and typeof(response)=="table" then canSave=response.canSave==true end
  if ok and response.ok then
-  if response.data and Motion.ApplySettings(response.data) then loadMessage="Saved tuning loaded" end
- else loadMessage="Could not load saved tuning; using preset" end
+  if response.data and Motion.ApplySettings(response.data) then loadMessage="Master tuning loaded" end
+ else loadMessage="Could not load master tuning; using preset" end
 end
 local screen=Instance.new("ScreenGui")
 screen.Name="MetalTuning"
@@ -23,11 +25,12 @@ local function make(class,props,parent)
  return obj
 end
 local panel=make("Frame",{Name="Panel",Position=UDim2.fromOffset(12,82),Size=UDim2.fromOffset(282,510),BackgroundColor3=Color3.fromRGB(17,24,36),BackgroundTransparency=0.08,BorderSizePixel=0,Active=true},screen)
+panel.Visible=canSave
 make("UICorner",{CornerRadius=UDim.new(0,10)},panel)
 make("UIStroke",{Color=Color3.fromRGB(58,90,116),Transparency=0.35},panel)
 local header=make("TextButton",{Name="Collapse",Size=UDim2.new(1,0,0,42),BackgroundTransparency=1,Text="METAL TUNING   −",TextColor3=Color3.fromRGB(177,226,255),Font=Enum.Font.GothamBold,TextSize=15},panel)
 local content=make("Frame",{Name="Content",Position=UDim2.fromOffset(0,42),Size=UDim2.new(1,0,1,-42),BackgroundTransparency=1},panel)
-make("TextLabel",{Size=UDim2.new(1,-24,0,34),Position=UDim2.fromOffset(12,0),BackgroundTransparency=1,Text="Live changes • Save to keep your tuning\nQ push  /  E pull",TextColor3=Color3.fromRGB(165,178,195),Font=Enum.Font.Gotham,TextSize=11,TextXAlignment=Enum.TextXAlignment.Left},content)
+make("TextLabel",{Size=UDim2.new(1,-24,0,34),Position=UDim2.fromOffset(12,0),BackgroundTransparency=1,Text="Preview locally • Save applies to everyone\nQ push  /  E pull",TextColor3=Color3.fromRGB(165,178,195),Font=Enum.Font.Gotham,TextSize=11,TextXAlignment=Enum.TextXAlignment.Left},content)
 local speedometer=make("Frame",{Name="Speedometer",AnchorPoint=Vector2.new(1,1),Position=UDim2.new(1,-18,1,-18),Size=UDim2.fromOffset(108,108),BackgroundColor3=Color3.fromRGB(17,24,36),BackgroundTransparency=0.12,BorderSizePixel=0,Visible=false},screen)
 make("UICorner",{CornerRadius=UDim.new(1,0)},speedometer)
 make("UIStroke",{Color=Color3.fromRGB(95,202,255),Thickness=2,Transparency=0.25},speedometer)
@@ -130,6 +133,23 @@ local save=make("TextButton",{Name="Save",Position=UDim2.new(0,12,1,-58),Size=UD
 make("UICorner",{CornerRadius=UDim.new(0,6)},save)
 local status=make("TextLabel",{Name="SaveStatus",Position=UDim2.new(0,12,1,-26),Size=UDim2.new(1,-24,0,22),BackgroundTransparency=1,Text=loadMessage,TextWrapped=true,TextColor3=Color3.fromRGB(165,207,228),Font=Enum.Font.Gotham,TextSize=10},content)
 local saving=false
+local masterState=game:GetService("ReplicatedStorage"):WaitForChild("MetalTuningMasterState",10)
+local revision=-1
+local function applyMaster()
+ if not masterState then return end
+ local ok,record=pcall(function() return game:GetService("HttpService"):JSONDecode(masterState.Value) end)
+ if not ok or typeof(record)~="table" or typeof(record.revision)~="number" or record.revision<=revision then return end
+ if not Motion.ApplySettings(record.data) then return end
+ revision=record.revision
+ screen:SetAttribute("MasterRevision",revision)
+ screen:SetAttribute("ShowSpeedometer",record.data.showSpeedometer)
+ for _,update in pairs(updates) do update() end
+ if revision>0 then status.Text="Master tuning applied to everyone" end
+end
+if masterState then
+ masterState.Changed:Connect(applyMaster)
+ applyMaster()
+end
 save.Activated:Connect(function()
  if saving then return end
  local focused=UIS:GetFocusedTextBox()
@@ -142,7 +162,7 @@ save.Activated:Connect(function()
   return remote:InvokeServer("Save",snapshot)
  end)
  local success=ok and typeof(response)=="table" and response.ok
- status.Text=success and "Saved • restores next session" or (ok and response.message or "Save failed; please retry")
+ status.Text=success and "Master saved • applies to everyone" or (ok and response.message or "Save failed; please retry")
  status.TextColor3=success and Color3.fromRGB(137,233,175) or Color3.fromRGB(255,155,135)
  screen:SetAttribute("LastSaveSucceeded",success==true)
  save.Text="Save Metal Tuning" saving=false

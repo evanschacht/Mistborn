@@ -1,42 +1,46 @@
 local ReplicatedStorage=game:GetService("ReplicatedStorage")
-local Players=game:GetService("Players")
+local RunService=game:GetService("RunService")
+local HttpService=game:GetService("HttpService")
 local store=game:GetService("DataStoreService"):GetDataStore("MistbornMetalTuning_v1")
 local Config=require(ReplicatedStorage:WaitForChild("MetalTuningConfig"))
+local Master=require(script.Parent:WaitForChild("MetalTuningMaster"))
+local state=Instance.new("StringValue")
+state.Name="MetalTuningMasterState"
+state.Value=HttpService:JSONEncode({revision=0,data=require(ReplicatedStorage.MetalTuningPreset)})
+state.Parent=ReplicatedStorage
+local master=Master.new(store,Config.Validate,function(record)
+ state.Value=HttpService:JSONEncode(record)
+end)
+local function canSave(player)
+ if RunService:IsStudio() then return true end
+ if game.CreatorType==Enum.CreatorType.User then return player.UserId==game.CreatorId end
+ local ok,rank=pcall(function() return player:GetRankInGroupAsync(game.CreatorId) end)
+ return ok and rank==255
+end
 local remote=Instance.new("RemoteFunction")
 remote.Name="MetalTuningPersistence"
-local busy,lastSave,cache={},{},{}
+local saving=false
+local lastSave=-math.huge
 remote.OnServerInvoke=function(player,action,payload)
- if action~="Load" and action~="Save" then return {ok=false,message="Unknown request"} end
- if busy[player] then return {ok=false,message="Please wait for the current request"} end
- local clean
- if action=="Save" then
-  clean=Config.Validate(payload)
-  if not clean then return {ok=false,message="Invalid settings; not saved"} end
-  if lastSave[player] and os.clock()-lastSave[player]<5 then return {ok=false,message="Wait a few seconds, then save again"} end
- elseif cache[player] then
-  return {ok=true,data=cache[player]}
+ local allowed=canSave(player)
+ if action=="Load" then
+  local ok=master.data~=nil or master:Load()
+  return {ok=ok,data=master.data,canSave=allowed}
  end
- busy[player]=true
- local key="player_"..tostring(player.UserId)
- local ok,result=pcall(function()
-  if action=="Save" then
-   lastSave[player]=os.clock()
-   store:UpdateAsync(key,function() return clean end)
-   return clean
-  end
-  return store:GetAsync(key)
- end)
- busy[player]=nil
- if not ok then
-  warn("Metal tuning "..action.." failed: "..tostring(result))
-  return {ok=false,message="Save service unavailable; retry"}
- end
- local data=result and Config.Validate(result)
- if result and not data then return {ok=false,message="Saved settings invalid; using project preset"} end
- if player.Parent then cache[player]=data end
- return {ok=true,data=data}
+ if action~="Save" then return {ok=false,message="Unknown request"} end
+ if not allowed then return {ok=false,message="Only the game owner can save master tuning"} end
+ if saving or os.clock()-lastSave<5 then return {ok=false,message="Wait a few seconds, then save again"} end
+ saving=true lastSave=os.clock()
+ local ok,message=master:Save(payload,allowed)
+ saving=false
+ return {ok=ok,message=message}
 end
 remote.Parent=ReplicatedStorage
-Players.PlayerRemoving:Connect(function(player)
- busy[player]=nil lastSave[player]=nil cache[player]=nil
+-- Replication updates this server immediately; other live servers refresh in about
+-- 30 seconds. Revisions prevent a stale read from undoing a newer saved config.
+task.spawn(function()
+ while true do
+  master:Load()
+  task.wait(30)
+ end
 end)
