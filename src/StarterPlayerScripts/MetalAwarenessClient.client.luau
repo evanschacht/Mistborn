@@ -174,6 +174,7 @@ end)
 
 -- Each key locks its own target until that key is released.
 UserInputService.InputBegan:Connect(function(input,processed)
+ Motion.InputBegan(input.KeyCode,processed or GuiService.MenuIsOpen or UserInputService:GetFocusedTextBox() ~= nil)
  if processed or GuiService.MenuIsOpen or UserInputService:GetFocusedTextBox() then return end
  local key=input.KeyCode
  if key~=Enum.KeyCode.Q and key~=Enum.KeyCode.E then return end
@@ -182,6 +183,7 @@ UserInputService.InputBegan:Connect(function(input,processed)
  if hovered and Motion.Start(hovered,sign) then heldKeys[key]=sign end
 end)
 UserInputService.InputEnded:Connect(function(input)
+ Motion.InputEnded(input.KeyCode)
  local sign=heldKeys[input.KeyCode]
  if sign then
   heldKeys[input.KeyCode]=nil
@@ -191,7 +193,7 @@ end)
 local function releaseMotion()
  table.clear(heldKeys)
  hovered=nil
- Motion.Stop()
+ Motion.ReleaseInput()
 end
 UserInputService.WindowFocusReleased:Connect(releaseMotion)
 UserInputService.TextBoxFocused:Connect(releaseMotion)
