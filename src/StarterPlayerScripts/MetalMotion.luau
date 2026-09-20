@@ -2,7 +2,8 @@ local Players=game:GetService("Players")
 local RunService=game:GetService("RunService")
 local player=Players.LocalPlayer
 local Motion={}
-Motion.AnchorRange=60 -- Studs from the character center to the anchor center.
+local SlidePose=require(script.Parent:WaitForChild("MetalSlidePose"))
+Motion.AnchorRange=180 -- Studs from the character center to the anchor center.
 function Motion.IsInRange(part,position)
  if not part or not part:IsA("BasePart") or part.Parent~=workspace:FindFirstChild("MetalAnchors") then return false end
  local distance=(part.Position-position).Magnitude
@@ -62,6 +63,7 @@ local function report()
  end
 end
 function Motion.Cancel()
+ SlidePose.Clear()
  active=false
  heldDuration=0
  moving=false
@@ -104,6 +106,10 @@ function Motion.Start(part,directionSign)
  targets[directionSign==1 and 1 or -1]=part
  active=true
  moving=true
+ local velocity=root.AssemblyLinearVelocity
+ local direction=Vector3.new(velocity.X,0,velocity.Z)
+ if direction.Magnitude<0.1 then direction=(part.Position-root.Position)*(directionSign==1 and 1 or -1) end
+ SlidePose.Step(character,humanoid,root,humanoid.FloorMaterial~=Enum.Material.Air,direction,targets[1],targets[-1])
  -- Keep the normal humanoid controller and gravity active.
  report()
  return true
@@ -192,6 +198,7 @@ RunService.PreSimulation:Connect(function(dt)
 
  end
  actuator.Force=acceleration*root.AssemblyMass
+ SlidePose.Step(root.Parent,humanoid,root,humanoid.FloorMaterial~=Enum.Material.Air,slideDirection,targets[1],targets[-1])
 
  if not active and horizontal.Magnitude<1 then Motion.Cancel() end
 
