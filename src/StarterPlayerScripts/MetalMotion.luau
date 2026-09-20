@@ -10,8 +10,8 @@ Motion.SettingSpecs={
  {key="PullGravity",title="Pull gravity assistance",min=0,max=100,step=1,default=98,unit="%",hint="0 = full gravity; 100 = full weight support."},
  {key="PushGravity",title="Push gravity assistance",min=0,max=100,step=1,default=98,unit="%",hint="With both held, the two settings are averaged."},
  {key="GravityBlend",title="Gravity assistance buildup",min=0.1,max=4,step=0.1,default=1.5,unit=" s",hint="Time for weight support to reach full strength."},
- {key="FallBraking",title="Falling momentum braking",min=0,max=12,step=0.25,default=5,unit="",hint="Higher values level out a fall more quickly."},
- {key="HeldDrag",title="Drag while pushing / pulling",min=0,max=5,step=0.1,default=1.2,unit="",hint="Higher values reduce sideways momentum."},
+ {key="FallBraking",title="Off-direction momentum braking",min=0,max=12,step=0.25,default=5,unit="",hint="Removes drift sideways to the combined force."},
+ {key="HeldDrag",title="Drag while pushing / pulling",min=0,max=5,step=0.1,default=1.2,unit="",hint="Equal resistance in all movement directions."},
  {key="CoastDrag",title="Slowdown after release",min=0.1,max=8,step=0.1,default=2.3,unit="",hint="Higher values shorten your glide and slide."},
 }
 -- Attributes share live values across UI, controller, and Studio inspection contexts.
@@ -153,22 +153,36 @@ RunService.PreSimulation:Connect(function(dt)
    if targets[-1] then assistance+=Motion.Settings.PushGravity count+=1 end
    local support=workspace.Gravity*(assistance/math.max(count,1))/100
 
-   local fallBraking=-math.min(current.Y,0)*Motion.Settings.FallBraking
-   acceleration+=Vector3.new(0,(support+fallBraking)*blend,0)
+   local resultant=Motion.Resultant(root.Position,targets[1] and targets[1].Position,targets[-1] and targets[-1].Position)
+   local drift=current
+   if resultant.Magnitude>0.01 then
+    local axis=resultant.Unit
+    drift=current-axis*current:Dot(axis)
+   end
+   -- Brake off-axis momentum, never oppose an intentional downward pull.
+   acceleration+=Vector3.new(0,support*blend,0)-drift*Motion.Settings.FallBraking*blend
+
   end
  end
  -- Horizontal drag gives a short slide while released vertical motion falls naturally.
 
  local horizontal=Vector3.new(current.X,0,current.Z)
- acceleration-=horizontal*(active and Motion.Settings.HeldDrag or Motion.Settings.CoastDrag)
+ if active then
+  acceleration-=current*Motion.Settings.HeldDrag
+ else
+  acceleration-=horizontal*Motion.Settings.CoastDrag
+ end
+
  if humanoid.FloorMaterial~=Enum.Material.Air then
   -- Let the walking controller follow the slide instead of braking against it.
   local groundVelocity=horizontal+Vector3.new(acceleration.X,0,acceleration.Z)*math.min(dt,0.1)
   humanoid.WalkSpeed=groundVelocity.Magnitude
   slideDirection=groundVelocity.Magnitude>0.1 and groundVelocity.Unit or Vector3.zero
  else
-  humanoid.WalkSpeed=previousWalkSpeed
-  slideDirection=Vector3.zero
+  -- Do not let default no-input air steering fight the metal-driven momentum.
+  humanoid.WalkSpeed=horizontal.Magnitude
+  slideDirection=horizontal.Magnitude>0.1 and horizontal.Unit or Vector3.zero
+
  end
  actuator.Force=acceleration*root.AssemblyMass
 
@@ -176,7 +190,7 @@ RunService.PreSimulation:Connect(function(dt)
 
 end)
 RunService:BindToRenderStep("MetalGroundSlide",Enum.RenderPriority.Input.Value+1,function()
- if moving and humanoid and humanoid.Parent and humanoid.FloorMaterial~=Enum.Material.Air then
+ if moving and humanoid and humanoid.Parent then
   humanoid:Move(slideDirection,false)
  end
 end)
