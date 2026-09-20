@@ -22,4 +22,4 @@ Open `Mistborn-Anchor-Prototype.rbxl` in Roblox Studio and press Play. This cont
 
 ## Prototype status
 
-Includes 14 metal anchors of varied sizes, soft cylindrical targeting beams, sticky nearest-cursor selection, independent push/pull targets, ground sliding, gradual airborne gravity assistance, and live tuning controls. Movement is currently controlled locally for prototyping.
+Includes 109 metal anchors of varied sizes, soft cylindrical targeting beams, sticky nearest-cursor selection, independent push/pull targets, ground sliding, gradual airborne gravity assistance, and live tuning controls. Movement is currently controlled locally for prototyping.
