@@ -18,14 +18,19 @@ Open `Mistborn-Anchor-Prototype.rbxl` in Roblox Studio and press Play. This cont
 - **Slide friction** controls coasting after release. **Slide stop cutoff** snaps released ground motion to zero below the selected speed (default 5 studs/s). Set friction to 0 for no coasting resistance, or cutoff to 0 for no appreciable stop snap.
 - Each slider has editable **Min**, **Max**, and current-value boxes. Enter a number and press Enter or leave the box. Invalid ranges revert; ranges must be nonnegative, increasing, and at most 10,000. Gravity assistance stays within 0–100%, and gravity buildup must remain positive.
 - The **Speedometer** switch shows a circular meter at the bottom right, reporting total measured velocity in studs per second (including vertical motion).
-- Tuning changes apply immediately for the current play session. Reset restores defaults.
+- **Save Metal Tuning**, beneath Reset All, saves your values, slider Min/Max bounds, and speedometer visibility to your Roblox player profile. Saved tuning loads on your next session. Save failures are shown explicitly; unsaved changes remain temporary.
+- Each slider has **Reset to Default**, restoring only its original value and range. Reset All restores all original slider defaults. Resetting does not overwrite your saved profile until you press Save.
+- The project includes the captured tuning preset: range 290, push/pull acceleration 230, slide friction 1.5, stop cutoff 30, airborne drag 8 (range 0–30), and speedometer on. Other values retain their original defaults. This preset loads when you have no saved profile.
+- Studio persistence requires Game Settings → Security → **Enable Studio Access to API Services**. Published games use Roblox DataStoreService. Saved profiles are per player, shared across Studio and the published experience; the in-game Save button does not commit to GitHub or rewrite the place file.
 
-The 180-stud anchor range still applies. For example, reaching 400 studs/s from rest at 50 studs/s² needs 8 seconds and about 1,600 studs of uninterrupted travel, so a nearby stationary anchor can end the pull before that speed is reached. Collisions and airborne gravity can also affect measured speed.
+The selected anchor range still applies. For example, reaching 400 studs/s from rest at 50 studs/s² needs 8 seconds and about 1,600 studs of uninterrupted travel, so a nearby stationary anchor can end the pull before that speed is reached. Collisions and airborne gravity can also affect measured speed.
 
 ## Files
 
 - `Mistborn-Anchor-Prototype.rbxl`: complete saved Roblox place.
 - `src/StarterPlayerScripts/`: readable Luau exports of the scripts embedded in the place. These are not automatically synchronized with Studio.
+- `src/ReplicatedStorage/`: tuning schema, validation, and captured startup preset.
+- `src/ServerScriptService/`: validated, rate-limited per-player persistence.
 
 ## Prototype status
 

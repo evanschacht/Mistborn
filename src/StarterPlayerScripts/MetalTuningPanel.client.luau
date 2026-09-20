@@ -2,6 +2,14 @@ local Players=game:GetService("Players")
 local RunService=game:GetService("RunService")
 local UIS=game:GetService("UserInputService")
 local Motion=require(script.Parent:WaitForChild("MetalMotion"))
+local remote=game:GetService("ReplicatedStorage"):WaitForChild("MetalTuningPersistence",10)
+local loadMessage="Project preset loaded"
+if remote then
+ local ok,response=pcall(function() return remote:InvokeServer("Load") end)
+ if ok and response.ok then
+  if response.data and Motion.ApplySettings(response.data) then loadMessage="Saved tuning loaded" end
+ else loadMessage="Could not load saved tuning; using preset" end
+end
 local screen=Instance.new("ScreenGui")
 screen.Name="MetalTuning"
 screen.ResetOnSpawn=false
@@ -19,7 +27,7 @@ make("UICorner",{CornerRadius=UDim.new(0,10)},panel)
 make("UIStroke",{Color=Color3.fromRGB(58,90,116),Transparency=0.35},panel)
 local header=make("TextButton",{Name="Collapse",Size=UDim2.new(1,0,0,42),BackgroundTransparency=1,Text="METAL TUNING   −",TextColor3=Color3.fromRGB(177,226,255),Font=Enum.Font.GothamBold,TextSize=15},panel)
 local content=make("Frame",{Name="Content",Position=UDim2.fromOffset(0,42),Size=UDim2.new(1,0,1,-42),BackgroundTransparency=1},panel)
-make("TextLabel",{Size=UDim2.new(1,-24,0,34),Position=UDim2.fromOffset(12,0),BackgroundTransparency=1,Text="Live changes • this play session\nQ push  /  E pull",TextColor3=Color3.fromRGB(165,178,195),Font=Enum.Font.Gotham,TextSize=11,TextXAlignment=Enum.TextXAlignment.Left},content)
+make("TextLabel",{Size=UDim2.new(1,-24,0,34),Position=UDim2.fromOffset(12,0),BackgroundTransparency=1,Text="Live changes • Save to keep your tuning\nQ push  /  E pull",TextColor3=Color3.fromRGB(165,178,195),Font=Enum.Font.Gotham,TextSize=11,TextXAlignment=Enum.TextXAlignment.Left},content)
 local speedometer=make("Frame",{Name="Speedometer",AnchorPoint=Vector2.new(1,1),Position=UDim2.new(1,-18,1,-18),Size=UDim2.fromOffset(108,108),BackgroundColor3=Color3.fromRGB(17,24,36),BackgroundTransparency=0.12,BorderSizePixel=0,Visible=false},screen)
 make("UICorner",{CornerRadius=UDim.new(1,0)},speedometer)
 make("UIStroke",{Color=Color3.fromRGB(95,202,255),Thickness=2,Transparency=0.25},speedometer)
@@ -27,13 +35,14 @@ local speedText=make("TextLabel",{Name="Speed",Position=UDim2.fromOffset(4,20),S
 make("TextLabel",{Position=UDim2.fromOffset(0,68),Size=UDim2.new(1,0,0,20),BackgroundTransparency=1,Text="studs / second",TextColor3=Color3.fromRGB(165,207,228),Font=Enum.Font.Gotham,TextSize=10},speedometer)
 local speedToggle=make("TextButton",{Name="SpeedometerToggle",Position=UDim2.fromOffset(12,35),Size=UDim2.new(1,-24,0,26),BackgroundColor3=Color3.fromRGB(39,57,77),Text="Speedometer: OFF",TextColor3=Color3.fromRGB(220,233,245),Font=Enum.Font.GothamMedium,TextSize=12,BorderSizePixel=0},content)
 make("UICorner",{CornerRadius=UDim.new(0,6)},speedToggle)
-screen:SetAttribute("ShowSpeedometer",false)
+screen:SetAttribute("ShowSpeedometer",script.Parent.MetalMotion:GetAttribute("ShowSpeedometer")==true)
 local function showSpeedometer()
  local on=screen:GetAttribute("ShowSpeedometer")==true
  speedometer.Visible=on speedToggle.Text=on and "Speedometer: ON" or "Speedometer: OFF"
  speedToggle.BackgroundColor3=on and Color3.fromRGB(31,99,133) or Color3.fromRGB(39,57,77)
 end
 screen:GetAttributeChangedSignal("ShowSpeedometer"):Connect(showSpeedometer)
+showSpeedometer()
 speedToggle.Activated:Connect(function() screen:SetAttribute("ShowSpeedometer",not speedometer.Visible) end)
 local elapsed=0
 local speedConnection=RunService.RenderStepped:Connect(function(dt)
@@ -46,12 +55,12 @@ local speedConnection=RunService.RenderStepped:Connect(function(dt)
  speedometer:SetAttribute("Speed",speed)
 end)
 script.Destroying:Connect(function() speedConnection:Disconnect() screen:Destroy() end)
-local list=make("ScrollingFrame",{Name="Sliders",Position=UDim2.fromOffset(12,68),Size=UDim2.new(1,-24,1,-112),BackgroundTransparency=1,BorderSizePixel=0,ScrollBarThickness=3,ScrollBarImageColor3=Color3.fromRGB(94,193,255),CanvasSize=UDim2.fromOffset(0,0),AutomaticCanvasSize=Enum.AutomaticSize.Y},content)
+local list=make("ScrollingFrame",{Name="Sliders",Position=UDim2.fromOffset(12,68),Size=UDim2.new(1,-24,1,-168),BackgroundTransparency=1,BorderSizePixel=0,ScrollBarThickness=3,ScrollBarImageColor3=Color3.fromRGB(94,193,255),CanvasSize=UDim2.fromOffset(0,0),AutomaticCanvasSize=Enum.AutomaticSize.Y},content)
 make("UIListLayout",{Padding=UDim.new(0,6),SortOrder=Enum.SortOrder.LayoutOrder},list)
 local drag
 local updates={}
 for index,spec in Motion.SettingSpecs do
- local row=make("Frame",{Name=spec.key,Size=UDim2.new(1,-8,0,126),LayoutOrder=index,BackgroundTransparency=1},list)
+ local row=make("Frame",{Name=spec.key,Size=UDim2.new(1,-8,0,156),LayoutOrder=index,BackgroundTransparency=1},list)
  make("TextLabel",{Size=UDim2.new(1,0,0,20),BackgroundTransparency=1,Text=spec.title,TextColor3=Color3.fromRGB(233,239,246),TextSize=13,Font=Enum.Font.GothamMedium,TextXAlignment=Enum.TextXAlignment.Left},row)
  local value=make("TextBox",{Name="Value",ClearTextOnFocus=false,Position=UDim2.fromOffset(0,21),Size=UDim2.new(1,0,0,20),BackgroundColor3=Color3.fromRGB(28,40,55),BorderSizePixel=0,TextColor3=Color3.fromRGB(95,202,255),Font=Enum.Font.Gotham,TextSize=12,TextXAlignment=Enum.TextXAlignment.Left},row)
  local hit=make("TextButton",{Name="Slider",Position=UDim2.fromOffset(0,39),Size=UDim2.new(1,0,0,24),Text="",AutoButtonColor=false,BackgroundTransparency=1},row)
@@ -89,6 +98,9 @@ for index,spec in Motion.SettingSpecs do
  end
  minBox.FocusLost:Connect(changeRange) maxBox.FocusLost:Connect(changeRange)
  updates[spec.key]=refresh
+ local resetOne=make("TextButton",{Name="ResetDefault",Position=UDim2.fromOffset(0,129),Size=UDim2.new(1,0,0,23),BackgroundColor3=Color3.fromRGB(39,57,77),Text="Reset to Default",TextColor3=Color3.fromRGB(220,233,245),Font=Enum.Font.GothamMedium,TextSize=11,BorderSizePixel=0},row)
+ make("UICorner",{CornerRadius=UDim.new(0,5)},resetOne)
+ resetOne.Activated:Connect(function() Motion.ResetSetting(spec.key) refresh() end)
  local function setAt(x)
   local fraction=math.clamp((x-track.AbsolutePosition.X)/track.AbsoluteSize.X,0,1)
   local low,high=Motion.GetRange(spec.key)
@@ -111,9 +123,30 @@ UIS.InputEnded:Connect(function(input)
  if drag and (input.UserInputType==Enum.UserInputType.MouseButton1 or input==drag.input) then drag=nil list.ScrollingEnabled=true end
 end)
 UIS.WindowFocusReleased:Connect(function() drag=nil list.ScrollingEnabled=true end)
-local reset=make("TextButton",{Name="Reset",Position=UDim2.new(0,12,1,-38),Size=UDim2.new(1,-24,0,28),BackgroundColor3=Color3.fromRGB(39,57,77),Text="Reset all to defaults",TextColor3=Color3.fromRGB(220,233,245),Font=Enum.Font.GothamMedium,TextSize=12,BorderSizePixel=0},content)
+local reset=make("TextButton",{Name="Reset",Position=UDim2.new(0,12,1,-92),Size=UDim2.new(1,-24,0,28),BackgroundColor3=Color3.fromRGB(39,57,77),Text="Reset all to defaults",TextColor3=Color3.fromRGB(220,233,245),Font=Enum.Font.GothamMedium,TextSize=12,BorderSizePixel=0},content)
 make("UICorner",{CornerRadius=UDim.new(0,6)},reset)
 reset.Activated:Connect(function() Motion.ResetSettings() for _,update in pairs(updates) do update() end end)
+local save=make("TextButton",{Name="Save",Position=UDim2.new(0,12,1,-58),Size=UDim2.new(1,-24,0,28),BackgroundColor3=Color3.fromRGB(31,99,133),Text="Save Metal Tuning",TextColor3=Color3.fromRGB(235,246,255),Font=Enum.Font.GothamMedium,TextSize=12,BorderSizePixel=0},content)
+make("UICorner",{CornerRadius=UDim.new(0,6)},save)
+local status=make("TextLabel",{Name="SaveStatus",Position=UDim2.new(0,12,1,-26),Size=UDim2.new(1,-24,0,22),BackgroundTransparency=1,Text=loadMessage,TextWrapped=true,TextColor3=Color3.fromRGB(165,207,228),Font=Enum.Font.Gotham,TextSize=10},content)
+local saving=false
+save.Activated:Connect(function()
+ if saving then return end
+ local focused=UIS:GetFocusedTextBox()
+ if focused then focused:ReleaseFocus() task.wait() end
+ saving=true save.Text="Saving…" status.Text=""
+ local snapshot=Motion.Snapshot(screen:GetAttribute("ShowSpeedometer"))
+ local ok,response=pcall(function()
+  if not remote then remote=game:GetService("ReplicatedStorage"):FindFirstChild("MetalTuningPersistence") end
+  if not remote then error("Save service not ready") end
+  return remote:InvokeServer("Save",snapshot)
+ end)
+ local success=ok and typeof(response)=="table" and response.ok
+ status.Text=success and "Saved • restores next session" or (ok and response.message or "Save failed; please retry")
+ status.TextColor3=success and Color3.fromRGB(137,233,175) or Color3.fromRGB(255,155,135)
+ screen:SetAttribute("LastSaveSucceeded",success==true)
+ save.Text="Save Metal Tuning" saving=false
+end)
 local collapsed=false
 local function resize()
  local camera=workspace.CurrentCamera

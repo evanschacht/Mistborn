@@ -8,20 +8,8 @@ function Motion.IsInRange(part,position)
  local distance=(part.Position-position).Magnitude
  return distance>0.1 and distance<=Motion.Settings.AnchorRange
 end
-Motion.SettingSpecs={
- {key="AnchorRange",title="Steel and iron range",min=0,max=500,step=1,default=180,unit=" studs",hint="Reach of blue lines, selection and push/pull, in studs."},
- {key="PullAcceleration",title="Pull acceleration",min=50,max=800,step=10,default=340,unit=" studs/s²",hint="How strongly E accelerates you."},
- {key="PushAcceleration",title="Push acceleration",min=50,max=800,step=10,default=340,unit=" studs/s²",hint="How strongly Q accelerates you."},
- {key="PullSpeed",title="Pull top speed",min=20,max=400,step=5,default=160,unit=" studs/s",hint="Maximum powered slide speed; acceleration sets how fast you reach it."},
- {key="PushSpeed",title="Push top speed",min=20,max=400,step=5,default=160,unit=" studs/s",hint="Maximum powered slide speed; acceleration sets how fast you reach it."},
- {key="PullGravity",title="Pull gravity assistance",min=0,max=100,step=1,default=98,unit="%",hint="0 = full gravity; 100 = full weight support."},
- {key="PushGravity",title="Push gravity assistance",min=0,max=100,step=1,default=98,unit="%",hint="With both held, the two settings are averaged."},
- {key="GravityBlend",title="Gravity assistance buildup",min=0.1,max=4,step=0.1,default=1.5,unit=" s",hint="Time for weight support to reach full strength."},
- {key="FallBraking",title="Off-direction momentum braking",min=0,max=12,step=0.25,default=5,unit="",hint="Removes drift sideways to the combined force."},
- {key="HeldDrag",title="Airborne drag",min=0,max=5,step=0.1,default=1.2,unit="",hint="Airborne drift resistance; does not limit powered ground speed."},
- {key="CoastDrag",title="Slide friction",min=0,max=8,step=0.1,default=2.3,unit="",hint="Resistance while coasting after release. 0 = no slide friction."},
- {key="StopSpeed",title="Slide stop cutoff",min=0,max=30,step=0.5,default=5,unit=" studs/s",hint="Released ground slides snap to zero below this speed."},
-}
+local Config=require(game:GetService("ReplicatedStorage"):WaitForChild("MetalTuningConfig"))
+Motion.SettingSpecs=Config.Specs
 -- Attributes share live values across UI, controller, and Studio inspection contexts.
 Motion.Settings=setmetatable({},{
  __index=function(_,key) return script:GetAttribute(key) end,
@@ -60,12 +48,40 @@ function Motion.SetRange(key,low,high)
  end
  return false
 end
-function Motion.ResetSettings()
+function Motion.ResetSetting(key)
  for _,spec in Motion.SettingSpecs do
-  script:SetAttribute(spec.key.."Min",nil) script:SetAttribute(spec.key.."Max",nil)
-  Motion.Settings[spec.key]=spec.default
+  if spec.key==key then
+   script:SetAttribute(key.."Min",nil) script:SetAttribute(key.."Max",nil)
+   Motion.Settings[key]=spec.default
+   return
+  end
  end
 end
+function Motion.ResetSettings()
+ for _,spec in Motion.SettingSpecs do Motion.ResetSetting(spec.key) end
+end
+function Motion.ApplySettings(data)
+ local clean=Config.Validate(data)
+ if not clean then return false end
+ for _,spec in Motion.SettingSpecs do
+  local key=spec.key
+  script:SetAttribute(key.."Min",clean.ranges[key][1])
+  script:SetAttribute(key.."Max",clean.ranges[key][2])
+  Motion.Settings[key]=clean.values[key]
+ end
+ script:SetAttribute("ShowSpeedometer",clean.showSpeedometer)
+ return true
+end
+function Motion.Snapshot(showSpeedometer)
+ local data={values={},ranges={},showSpeedometer=showSpeedometer==true}
+ for _,spec in Motion.SettingSpecs do
+  data.values[spec.key]=Motion.Settings[spec.key]
+  local low,high=Motion.GetRange(spec.key)
+  data.ranges[spec.key]={low,high}
+ end
+ return data
+end
+Motion.ApplySettings(require(game:GetService("ReplicatedStorage"):WaitForChild("MetalTuningPreset")))
 -- Constant acceleration until the cap; exponential coasting friction; independent stop cutoff.
 function Motion.StepGround(velocity,acceleration,dt,powered,cap,friction,cutoff)
  if powered then

@@ -1,0 +1,8 @@
+{
+  "date": "2026-09-20",
+  "clientChecksPassed": 40,
+  "validation": ["captured preset accepted", "infinity rejected", "out-of-range value rejected", "reversed range rejected"],
+  "ui": ["Save Metal Tuning below Reset All", "12 individual reset buttons", "clicked range reset: 290 to 180, pull acceleration remained 230", "speedometer restored enabled"],
+  "persistence": "Pending Studio API access. Roblox rejected DataStore access with error 502 / Studio access to APIs is not allowed. UI correctly shows preset fallback; no successful durable save claimed.",
+  "capturedPreset": "src/ReplicatedStorage/MetalTuningPreset.luau"
+}
