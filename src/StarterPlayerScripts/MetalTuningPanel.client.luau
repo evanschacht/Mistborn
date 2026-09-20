@@ -18,7 +18,7 @@ make("UICorner",{CornerRadius=UDim.new(0,10)},panel)
 make("UIStroke",{Color=Color3.fromRGB(58,90,116),Transparency=0.35},panel)
 local header=make("TextButton",{Name="Collapse",Size=UDim2.new(1,0,0,42),BackgroundTransparency=1,Text="METAL TUNING   −",TextColor3=Color3.fromRGB(177,226,255),Font=Enum.Font.GothamBold,TextSize=15},panel)
 local content=make("Frame",{Name="Content",Position=UDim2.fromOffset(0,42),Size=UDim2.new(1,0,1,-42),BackgroundTransparency=1},panel)
-make("TextLabel",{Size=UDim2.new(1,-24,0,34),Position=UDim2.fromOffset(12,0),BackgroundTransparency=1,Text="Q push / E pull • WASD air steering\nDouble-tap WASD: boost • once per airtime",TextColor3=Color3.fromRGB(165,178,195),Font=Enum.Font.Gotham,TextSize=11,TextXAlignment=Enum.TextXAlignment.Left},content)
+make("TextLabel",{Size=UDim2.new(1,-24,0,34),Position=UDim2.fromOffset(12,0),BackgroundTransparency=1,Text="Live changes • this play session\nQ push  /  E pull",TextColor3=Color3.fromRGB(165,178,195),Font=Enum.Font.Gotham,TextSize=11,TextXAlignment=Enum.TextXAlignment.Left},content)
 local list=make("ScrollingFrame",{Name="Sliders",Position=UDim2.fromOffset(12,40),Size=UDim2.new(1,-24,1,-88),BackgroundTransparency=1,BorderSizePixel=0,ScrollBarThickness=3,ScrollBarImageColor3=Color3.fromRGB(94,193,255),CanvasSize=UDim2.fromOffset(0,0),AutomaticCanvasSize=Enum.AutomaticSize.Y},content)
 make("UIListLayout",{Padding=UDim.new(0,6),SortOrder=Enum.SortOrder.LayoutOrder},list)
 local drag
