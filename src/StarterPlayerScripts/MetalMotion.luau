@@ -9,6 +9,7 @@ function Motion.IsInRange(part,position)
  return distance>0.1 and distance<Motion.Settings.AnchorRange
 end
 local Config=require(game:GetService("ReplicatedStorage"):WaitForChild("MetalTuningConfig"))
+local ForceGeometry=require(game:GetService("ReplicatedStorage"):WaitForChild("MetalForceGeometry"))
 Motion.SettingSpecs=Config.Specs
 -- Attributes share live values across UI, controller, and Studio inspection contexts.
 Motion.Settings=setmetatable({},{
@@ -199,7 +200,7 @@ RunService.PreSimulation:Connect(function(dt)
  for directionSign,part in pairs(targets) do
   local delta=part.Position-root.Position
   if delta.Magnitude>0.1 then
-   local direction=delta.Unit*directionSign
+   local direction=ForceGeometry.Direction(part.CFrame,part.Size,root.CFrame,root.Size,directionSign)
    local along=current:Dot(direction)
    local strength=directionSign==1 and Motion.Settings.PullAcceleration or Motion.Settings.PushAcceleration
    strength*=Config.ForceScale(delta.Magnitude,Motion.Settings)
