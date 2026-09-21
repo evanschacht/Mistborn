@@ -1,6 +1,6 @@
--- Captured from the live tuning panel before adding persistent saves.
+-- Saved from the current live tuning panel.
 return {
  showSpeedometer=true,
- values={AnchorRange=290,ForceFalloff=1,ForceNearClamp=5,ForceFarClamp=150,PullAcceleration=230,PushAcceleration=230,PullSpeed=160,PushSpeed=160,CoastDrag=1.5,StopSpeed=30},
- ranges={AnchorRange={0,500},ForceFalloff={0,5},ForceNearClamp={0.1,50},ForceFarClamp={0.1,500},PullAcceleration={50,800},PushAcceleration={50,800},PullSpeed={20,400},PushSpeed={20,400},CoastDrag={0,8},StopSpeed={0,30}},
+ values={CoastDrag=1.5,PushAcceleration=2000,PushSpeed=160,ForceFalloff=0.1,AnchorRange=500,ForceNearClamp=5,StopSpeed=30,ForceFarClamp=150,PullAcceleration=2000,PullSpeed=160},
+ ranges={CoastDrag={0,8},PushAcceleration={50,2000},PushSpeed={20,400},ForceFalloff={0,5},AnchorRange={0,500},ForceNearClamp={0.1,50},StopSpeed={0,30},ForceFarClamp={0.1,500},PullAcceleration={50,2000},PullSpeed={20,400}},
 }
