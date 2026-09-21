@@ -14,7 +14,7 @@ check("Friction slows coast",m.StepGround(Vector3.new(20,0,0),Vector3.zero,.1,fa
 check("Editable range",m.SetRange("PullSpeed",0,1000) and m.SetSetting("PullSpeed",800)==800)
 check("Reject reversed range",not m.SetRange("PullSpeed",100,50))
 check("Reject nonfinite",not m.SetRange("PullSpeed",0,math.huge))
-m.ResetSettings()
+m.ResetSettings() m.SetSetting("ForceFalloff",0) -- Isolate acceleration and speed caps.
 local function run(accel,friction,duration,sign)
  m.Cancel()
  r.CFrame=CFrame.new(-800,3.01,1010) r.AssemblyLinearVelocity=Vector3.zero task.wait(.4)
@@ -41,7 +41,7 @@ anchor.CFrame=CFrame.new(r.Position+Vector3.new(50,0,0))
 m.Start(anchor,1) m.Stop(1) r.AssemblyLinearVelocity=Vector3.new(9,0,0)
 task.wait(.1)
 check("Live cutoff",Vector3.new(r.AssemblyLinearVelocity.X,0,r.AssemblyLinearVelocity.Z).Magnitude<.01 and not c:GetAttribute("MetalSliding"),r.AssemblyLinearVelocity.Magnitude)
-m.Cancel() m.ResetSettings() anchor.CFrame=original
+m.Cancel() m.ResetSettings() m.SetSetting("ForceFalloff",0) -- Isolate acceleration and speed caps. anchor.CFrame=original
 r.CFrame=CFrame.new(0,5,0) r.AssemblyLinearVelocity=Vector3.zero
 p.PlayerGui.MetalTuning:SetAttribute("ShowSpeedometer",true)
 task.wait(.2)

@@ -6,7 +6,7 @@ local SlidePose=require(script.Parent:WaitForChild("MetalSlidePose"))
 function Motion.IsInRange(part,position)
  if not part or not part:IsA("BasePart") or part.Parent~=workspace:FindFirstChild("MetalAnchors") then return false end
  local distance=(part.Position-position).Magnitude
- return distance>0.1 and distance<=Motion.Settings.AnchorRange
+ return distance>0.1 and distance<Motion.Settings.AnchorRange
 end
 local Config=require(game:GetService("ReplicatedStorage"):WaitForChild("MetalTuningConfig"))
 Motion.SettingSpecs=Config.Specs
@@ -38,8 +38,8 @@ function Motion.SetRange(key,low,high)
  if not finite(low) or not finite(high) or low>=high then return false end
  for _,spec in Motion.SettingSpecs do
   if spec.key==key then
-   local floor=key=="GravityBlend" and 0.01 or 0
-   local ceiling=(key=="PullGravity" or key=="PushGravity") and 100 or 10000
+   local floor=(key=="ForceNearClamp" or key=="ForceFarClamp") and 0.1 or 0
+   local ceiling=10000
    if low<floor or high>ceiling then return false end
    script:SetAttribute(key.."Min",low) script:SetAttribute(key.."Max",high)
    Motion.SetSetting(key,Motion.Settings[key])
@@ -202,6 +202,7 @@ RunService.PreSimulation:Connect(function(dt)
    local direction=delta.Unit*directionSign
    local along=current:Dot(direction)
    local strength=directionSign==1 and Motion.Settings.PullAcceleration or Motion.Settings.PushAcceleration
+   strength*=Config.ForceScale(delta.Magnitude,Motion.Settings)
    local speed=directionSign==1 and Motion.Settings.PullSpeed or Motion.Settings.PushSpeed
    topSpeed=math.max(topSpeed,speed)
    local thrust=grounded and strength or math.min(strength,math.max(speed-along,0)/math.max(dt,0.001))

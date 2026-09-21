@@ -14,7 +14,7 @@ Open `Mistborn-Anchor-Prototype.rbxl` in Roblox Studio and press Play. This cont
 - Hold **Q** to push away from the highlighted cube, even with the mouse elsewhere.
 - Hold **E** to pull toward the highlighted cube, even with the mouse elsewhere.
 - Each key locks its own target until released. Hold both to combine forces and steer.
-- Use the top-left **Metal Tuning** panel for seven sliders. Pull/Push top speed now caps powered ground sliding; acceleration changes the time needed to reach it. With both keys held, forces combine and the higher active cap is used.
+- Use the top-left **Metal Tuning** panel for ten sliders. Pull/Push top speed now caps powered ground sliding; acceleration changes the time needed to reach it. With both keys held, forces combine and the higher active cap is used.
 - **Slide friction** controls coasting after release. **Slide stop cutoff** snaps released ground motion to zero below the selected speed (default 5 studs/s). Set friction to 0 for no coasting resistance, or cutoff to 0 for no appreciable stop snap.
 - Each slider has editable **Min**, **Max**, and current-value boxes. Enter a number and press Enter or leave the box. Invalid ranges revert; ranges must be nonnegative, increasing, and at most 10,000.
 - The **Speedometer** switch shows a circular meter at the bottom right, reporting total measured velocity in studs per second (including vertical motion).
@@ -43,3 +43,9 @@ Only the experience owner (or owning group owner) may save master tuning in publ
 Gravity always acts at Workspace.Gravity. Every physics step recomputes the direction from the player to each held anchor; pull adds acceleration along that direction and push adds acceleration opposite it. The resulting upward component must exceed gravity to lift the player. No automatic weight support, vertical drag, or off-axis braking cancels falling. Released air motion retains normal vertical gravity; slide/coast friction acts horizontally only.
 
 The former gravity assistance, assistance buildup, momentum braking, and airborne drag sliders were removed. Older saved configurations remain compatible: obsolete fields are ignored. Strength, top speed, range, slide friction, and stop cutoff are preserved.
+
+## Distance falloff
+
+Force falloff, Close clamp distance, and Far clamp distance affect both push and pull. Defaults are 1, 5 studs, and 150 studs. Acceleration sliders specify full close-range strength. The multiplier is 1 / (1 + falloff * (clampedDistance / closeClamp - 1)); falloff 1 is inverse-linear, 0 is constant, and higher values weaken force faster. Close distance prevents spikes; far distance stops further weakening. If far is set below close, its effective value is close. Steel and iron range overrides both clamps: at or beyond that range, force is zero, lines/outlines disappear, selection clears, and held targets release.
+
+Older saved master configurations acquire the three new defaults while preserving their existing values. Each new control supports editable Min/Max, individual reset, and Save Metal Tuning like the other controls.

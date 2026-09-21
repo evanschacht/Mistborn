@@ -1,0 +1,94 @@
+{
+  "date": "2026-09-20",
+  "checks": [
+    {
+      "name": "Contact bounded at full strength",
+      "pass": true
+    },
+    {
+      "name": "Inverse linear midpoint",
+      "pass": true
+    },
+    {
+      "name": "Far clamp plateaus",
+      "pass": true
+    },
+    {
+      "name": "Range is exact zero cutoff",
+      "pass": true
+    },
+    {
+      "name": "Zero falloff gives constant force",
+      "pass": true
+    },
+    {
+      "name": "Falloff knob steepens curve",
+      "pass": true
+    },
+    {
+      "name": "Far below close remains safe",
+      "pass": true
+    },
+    {
+      "name": "Older master tuning migrates",
+      "pass": true
+    },
+    {
+      "data": {
+        "expected": 230,
+        "measured": 229.99999577557722
+      },
+      "name": "Live force sign 1 distance 5",
+      "pass": true
+    },
+    {
+      "data": {
+        "expected": 57.5,
+        "measured": 57.499998943894305
+      },
+      "name": "Live force sign 1 distance 20",
+      "pass": true
+    },
+    {
+      "data": {
+        "expected": 7.666666666666667,
+        "measured": 7.666666395870334
+      },
+      "name": "Live force sign 1 distance 200",
+      "pass": true
+    },
+    {
+      "data": {
+        "expected": 230,
+        "measured": 229.99999577557722
+      },
+      "name": "Live force sign -1 distance 5",
+      "pass": true
+    },
+    {
+      "data": {
+        "expected": 57.5,
+        "measured": 57.499998943894305
+      },
+      "name": "Live force sign -1 distance 20",
+      "pass": true
+    },
+    {
+      "data": {
+        "expected": 7.666666666666667,
+        "measured": 7.666666395870334
+      },
+      "name": "Live force sign -1 distance 200",
+      "pass": true
+    },
+    {
+      "name": "Moving out of range stops force",
+      "pass": true
+    },
+    {
+      "name": "Out of range cannot start",
+      "pass": true
+    }
+  ],
+  "tuningChecksPassed": 34
+}
