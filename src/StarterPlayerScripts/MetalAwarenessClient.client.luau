@@ -34,7 +34,21 @@ end
 local RADIAL_LAYERS=6
 local function addAnchor(part)
  if not part:IsA("BasePart") or entries[part] then return end
- local entry={layers={}}
+ local entry={layers={},outline={}}
+ -- Twelve local-space edges provide adjustable pixel thickness through walls.
+ -- This avoids a separate Highlight instance/render slot for every anchor.
+ for axis=1,3 do
+  for a=-1,1,2 do for b=-1,1,2 do
+   local edge=Instance.new("LineHandleAdornment")
+   edge.Name="AnchorOutline_"..part.Name
+   edge.Adornee=part
+   edge.AlwaysOnTop=true
+   edge.ZIndex=1
+   edge.Visible=false
+   edge.Parent=effects
+   table.insert(entry.outline,{edge=edge,axis=axis,a=a,b=b})
+  end end
+ end
  for i=1,RADIAL_LAYERS do
   local origin=Instance.new("Attachment")
   origin.Name="EnergyOrigin_"..part.Name.."_"..i
@@ -66,6 +80,7 @@ anchors.ChildAdded:Connect(addAnchor)
 anchors.ChildRemoved:Connect(function(part)
  local entry=entries[part]
  if entry then
+  for _,item in entry.outline do item.edge:Destroy() end
   for _,layer in entry.layers do
    layer.line:Destroy()
    layer.origin:Destroy()
@@ -93,7 +108,10 @@ end
 player.CharacterAdded:Connect(bindCharacter)
 player.CharacterRemoving:Connect(function()
  root=nil
+ selectAnchor(nil)
  for _,entry in pairs(entries) do
+  entry.outlineEnabled=false
+  for _,item in entry.outline do item.edge.Visible=false end
   for _,layer in entry.layers do
    layer.line.Enabled=false
    layer.origin.Parent=nil
@@ -111,6 +129,27 @@ RunService.RenderStepped:Connect(function()
  for part,entry in pairs(entries) do
   local delta=part.Position-root.Position
   local enabled=Motion.IsInRange(part,root.Position)
+  local active=part==selected
+  if entry.outlineEnabled~=enabled or entry.outlineActive~=active or entry.outlineSize~=part.Size then
+   entry.outlineEnabled=enabled entry.outlineActive=active entry.outlineSize=part.Size
+   local half=part.Size*0.5
+   for _,item in entry.outline do
+    local start,finish
+    if item.axis==1 then
+     start=Vector3.new(-half.X,item.a*half.Y,item.b*half.Z) finish=Vector3.new(half.X,start.Y,start.Z)
+    elseif item.axis==2 then
+     start=Vector3.new(item.a*half.X,-half.Y,item.b*half.Z) finish=Vector3.new(start.X,half.Y,start.Z)
+    else
+     start=Vector3.new(item.a*half.X,item.b*half.Y,-half.Z) finish=Vector3.new(start.X,start.Y,half.Z)
+    end
+    item.edge.CFrame=CFrame.lookAt(start,finish)
+    item.edge.Length=(finish-start).Magnitude
+    item.edge.Thickness=active and 3 or 1.5
+    item.edge.Color3=active and Color3.fromRGB(175,240,255) or Color3.fromRGB(65,155,215)
+    item.edge.Transparency=active and 0.05 or 0.4
+    item.edge.Visible=enabled
+   end
+  end
   if enabled then
    local direction=delta.Unit
    local reference=math.abs(direction.Y)>0.98 and Vector3.xAxis or Vector3.yAxis
@@ -184,7 +223,7 @@ UserInputService.InputBegan:Connect(function(input,processed)
  if key~=Enum.KeyCode.Q and key~=Enum.KeyCode.E then return end
  if heldKeys[key] then return end
  local sign=key==Enum.KeyCode.E and 1 or -1
- if hovered and Motion.Start(hovered,sign) then heldKeys[key]=sign end
+ if selected and Motion.Start(selected,sign) then heldKeys[key]=sign end
 end)
 UserInputService.InputEnded:Connect(function(input)
  local sign=heldKeys[input.KeyCode]

@@ -8,11 +8,11 @@ Open `Mistborn-Anchor-Prototype.rbxl` in Roblox Studio and press Play. This cont
 
 ## Controls
 
-- Hover near a blue cube to select it. Selection stays highlighted when the cursor moves away.
+- Every metal anchor in sensing range has a thin blue outline visible through walls. The selected anchor has a brighter, thicker outline and a highlighted fill. Hover near a blue cube to select it; selection stays highlighted when the cursor moves away.
 - **Steel and iron range** adjusts blue lines, selection, and push/pull reach together, measured from character center to anchor center. Default: 180 studs; initial slider range: 0–500, with editable Min/Max. Leaving range clears selection and stops force from that anchor; returning requires a new key press.
 - Ground push/pull uses a low sliding stance facing travel. The right arm aims at the pull target and the left at the push target. The stance persists through coasting and ends when stopped or airborne.
-- Hold **Q** to push away from the hovered cube.
-- Hold **E** to pull toward the hovered cube.
+- Hold **Q** to push away from the highlighted cube, even with the mouse elsewhere.
+- Hold **E** to pull toward the highlighted cube, even with the mouse elsewhere.
 - Each key locks its own target until released. Hold both to combine forces and steer.
 - Use the top-left **Metal Tuning** panel for seven sliders. Pull/Push top speed now caps powered ground sliding; acceleration changes the time needed to reach it. With both keys held, forces combine and the higher active cap is used.
 - **Slide friction** controls coasting after release. **Slide stop cutoff** snaps released ground motion to zero below the selected speed (default 5 studs/s). Set friction to 0 for no coasting resistance, or cutoff to 0 for no appreciable stop snap.
