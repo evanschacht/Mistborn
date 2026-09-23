@@ -15,7 +15,7 @@ function controls:GetMoveVector()
  end
  return v.Magnitude>1 and v.Unit or v
 end
-local Air={Speed=32,Acceleration=85,Drag=0.15}
+local Air={Speed=64,Acceleration=240,Drag=0.15}
 local character,humanoid,root
 local joints,saved={},{}
 local active=false
@@ -67,11 +67,11 @@ function Air.Step(dt)
  h:Move(flat.Magnitude>0.01 and flat.Unit or Vector3.zero,false)
 
  blend=math.min(1,blend+dt*9)
- local lean=math.min(flat.Magnitude/32,1)
+ local lean=math.min(flat.Magnitude/Air.Speed,1)
  local pose={Root=angles(-8*lean,0,0),Waist=angles(-6,0,0),Neck=angles(8,0,0),
  RightHip=angles(48,0,8),LeftHip=angles(38,0,-8),RightKnee=angles(-72,0,0),LeftKnee=angles(-62,0,0),
  RightAnkle=angles(15,0,0),LeftAnkle=angles(15,0,0),
- RightShoulder=angles(30,0,65),LeftShoulder=angles(30,0,-65),RightElbow=angles(-65,0,0),LeftElbow=angles(-65,0,0)}
+ RightShoulder=angles(30,0,65)*angles(0,180,0),LeftShoulder=angles(30,0,-65)*angles(0,180,0),RightElbow=angles(-65,0,0),LeftElbow=angles(-65,0,0)}
  pose.RootJoint=pose.Root
  pose["Right Hip"]=angles(25,0,8) pose["Left Hip"]=angles(20,0,-8)
  pose["Right Shoulder"]=pose.RightShoulder pose["Left Shoulder"]=pose.LeftShoulder
