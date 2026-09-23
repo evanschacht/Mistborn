@@ -5,6 +5,7 @@ Config.Specs={
  {key="AirSpeed",title="Aerial movement speed",min=0,max=200,step=1,default=64,unit=" studs/s",hint="Speed added by WASD in the air; preserves faster metal momentum."},
  {key="AirAcceleration",title="Aerial acceleration",min=0,max=1000,step=5,default=240,unit=" studs/s�",hint="How quickly airborne WASD changes your movement."},
  {key="AirDrag",title="Air drag",min=0,max=8,step=0.05,default=0.15,unit="",hint="Horizontal resistance while airborne with WASD released. 0 = no drag."},
+ {key="JumpStrength",title="Jump strength",min=0,max=50,step=0.5,default=8,unit=" studs",hint="Height of an ordinary jump. 0 disables jumping."},
  {key="Gravity",title="Gravity",min=0,max=400,step=1,default=60,unit=" studs/s�",hint="Continuous downward acceleration, including metal flight."},
  {key="AnchorRange",title="Steel and iron range",min=0,max=500,step=1,default=180,unit=" studs",hint="Reach of blue lines, selection and push/pull, in studs."},
  {key="PullFalloff",title="Pull force falloff",min=0,max=5,step=0.05,default=1,unit="",hint="0 = constant; 1 = inverse-linear; higher = faster weakening."},
@@ -41,7 +42,7 @@ function Config.Validate(data)
    v=data.values.ForceFalloff or spec.default r=data.ranges.ForceFalloff or {spec.min,spec.max}
   end
   -- Migrate older master saves without discarding their existing tuning.
-  if v==nil and r==nil and (spec.key=="ForceFalloff" or spec.key=="ForceNearClamp" or spec.key=="ForceFarClamp" or spec.key=="GroundSpeed" or spec.key=="GroundAcceleration" or spec.key=="AirSpeed" or spec.key=="AirAcceleration" or spec.key=="Gravity" or spec.key=="AirDrag") then
+  if v==nil and r==nil and (spec.key=="ForceFalloff" or spec.key=="ForceNearClamp" or spec.key=="ForceFarClamp" or spec.key=="GroundSpeed" or spec.key=="GroundAcceleration" or spec.key=="AirSpeed" or spec.key=="AirAcceleration" or spec.key=="Gravity" or spec.key=="AirDrag" or spec.key=="JumpStrength") then
    v=spec.default r={spec.min,spec.max}
   end
   if typeof(r)~="table" then return nil end

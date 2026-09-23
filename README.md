@@ -71,3 +71,5 @@ Verification: 168 live checks for controls, migration, gravity/reset and uniform
 Push force falloff and Pull force falloff are separate tuning controls (both captured at 0.1). Close/far clamps and sensing range remain shared. Legacy master saves copy the old falloff and its range into both new controls. Independent curves, shared zero cutoff, migration, and both UI rows verified. Latest live walking/air settings preserved: speeds 40/40, accelerations 70/160.
 
 Air drag tuning controls horizontal airborne coasting resistance when WASD is released. Default 0.15 preserves the previous feel; zero disables drag. It uses editable bounds, per-slider reset and the master tuning save flow. Gravity remains independent.
+
+Jump strength controls normal jump height in studs (default 8, initial bounds 0-50), with live adjustment, editable bounds, reset and master-save support. Current tuning captured with air drag 0.7.

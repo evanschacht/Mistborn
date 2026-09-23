@@ -57,6 +57,8 @@ function Air.Step(dt,settings,metalMoving)
   Air.Reset() character,humanoid,root=c,h,r table.clear(joints)
   for _,j in c:GetDescendants() do if j:IsA("Motor6D") or j:IsA("AnimationConstraint") then joints[j.Name]=j end end
  end
+ h.UseJumpPower=false
+ h.JumpHeight=settings and settings.JumpStrength or 8
  local state=h:GetState()
  if h.FloorMaterial~=Enum.Material.Air or (state~=Enum.HumanoidStateType.Jumping and state~=Enum.HumanoidStateType.Freefall) then
   Air.Reset()
