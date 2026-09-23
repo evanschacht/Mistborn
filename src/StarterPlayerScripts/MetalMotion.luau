@@ -2,6 +2,7 @@ local Players=game:GetService("Players")
 local RunService=game:GetService("RunService")
 local player=Players.LocalPlayer
 local Motion={}
+local Air=require(script.Parent:WaitForChild("AerialMovement"))
 local SlidePose=require(script.Parent:WaitForChild("MetalSlidePose"))
 function Motion.IsInRange(part,position)
  if not part or not part:IsA("BasePart") or part.Parent~=workspace:FindFirstChild("MetalAnchors") then return false end
@@ -188,6 +189,7 @@ function Motion.Resultant(position,pullPosition,pushPosition)
  return result
 end
 RunService.PreSimulation:Connect(function(dt)
+ Air.Step(dt)
  if not moving then return end
  if not root or not root.Parent or not humanoid or humanoid.Health<=0 then Motion.Cancel() return end
  for directionSign,part in pairs(targets) do
@@ -220,9 +222,7 @@ RunService.PreSimulation:Connect(function(dt)
  -- Roblox applies gravity continuously. Metal thrust contains only the current
  -- anchor direction; no weight support or vertical/off-axis velocity damping.
  local horizontal=Vector3.new(current.X,0,current.Z)
- if not grounded and not active then
-  acceleration-=horizontal*Motion.Settings.CoastDrag
- end
+ -- Air drag is separate from ground slide friction.
  if grounded then
   -- Integrate the commanded speed rather than accumulating Humanoid friction losses.
   -- A substantial collision/deflection resets the command to actual motion.
@@ -251,7 +251,7 @@ RunService.PreSimulation:Connect(function(dt)
 
 end)
 RunService:BindToRenderStep("MetalGroundSlide",Enum.RenderPriority.Input.Value+1,function()
- if moving and humanoid and humanoid.Parent then
+ if moving and humanoid and humanoid.Parent and humanoid.FloorMaterial~=Enum.Material.Air then
   humanoid:Move(slideDirection,false)
  end
 end)
