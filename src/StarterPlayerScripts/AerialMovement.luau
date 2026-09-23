@@ -46,6 +46,7 @@ function Air.Step(dt,settings,metalMoving)
  if settings then
   groundWalkSpeed=settings.GroundSpeed
   Air.Speed=settings.AirSpeed Air.Acceleration=settings.AirAcceleration
+  Air.Drag=settings.AirDrag or 0.15
   workspace.Gravity=settings.Gravity
  end
  local c=player.Character

@@ -69,3 +69,5 @@ Walking never captures an airborne WalkSpeed as its ground baseline. Ordinary wa
 Verification: 168 live checks for controls, migration, gravity/reset and uniform beam properties; walking measured 16 studs/s before and after a fast jump. With walking acceleration set to 10, speed measured 2.67/5.17/7.67/10.17 at quarter-second intervals. A 90-degree direction change rotated over several frames (largest measured step 10.83 degrees). Front-view airborne pose inspected. Preserved live sensing range 750 with a maximum of 1000.
 
 Push force falloff and Pull force falloff are separate tuning controls (both captured at 0.1). Close/far clamps and sensing range remain shared. Legacy master saves copy the old falloff and its range into both new controls. Independent curves, shared zero cutoff, migration, and both UI rows verified. Latest live walking/air settings preserved: speeds 40/40, accelerations 70/160.
+
+Air drag tuning controls horizontal airborne coasting resistance when WASD is released. Default 0.15 preserves the previous feel; zero disables drag. It uses editable bounds, per-slider reset and the master tuning save flow. Gravity remains independent.
