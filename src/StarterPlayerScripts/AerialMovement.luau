@@ -23,6 +23,7 @@ local walkSpeed,autoRotate
 local blend=0
 local command=Vector3.zero
 local groundWalkSpeed=16
+local groundCommand=0
 local function angles(x,y,z) return CFrame.Angles(math.rad(x),math.rad(y),math.rad(z)) end
 local function restorePose()
  for joint,value in saved do if joint.Parent then joint.Transform=value end end
@@ -30,7 +31,7 @@ local function restorePose()
 end
 function Air.Reset()
  restorePose()
- if active and humanoid and humanoid.Parent then humanoid.WalkSpeed=walkSpeed humanoid.AutoRotate=autoRotate end
+ if active and humanoid and humanoid.Parent then humanoid.WalkSpeed=groundWalkSpeed humanoid.AutoRotate=true end
  active=false blend=0 command=Vector3.zero
 end
 function Air.Horizontal(velocity,input,dt)
@@ -41,7 +42,12 @@ function Air.Horizontal(velocity,input,dt)
  end
  return velocity*math.exp(-Air.Drag*dt)
 end
-function Air.Step(dt)
+function Air.Step(dt,settings,metalMoving)
+ if settings then
+  groundWalkSpeed=settings.GroundSpeed
+  Air.Speed=settings.AirSpeed Air.Acceleration=settings.AirAcceleration
+  workspace.Gravity=settings.Gravity
+ end
  local c=player.Character
  local h=c and c:FindFirstChildOfClass("Humanoid")
  local r=c and c:FindFirstChild("HumanoidRootPart")
@@ -51,7 +57,18 @@ function Air.Step(dt)
   for _,j in c:GetDescendants() do if j:IsA("Motor6D") or j:IsA("AnimationConstraint") then joints[j.Name]=j end end
  end
  local state=h:GetState()
- if h.FloorMaterial~=Enum.Material.Air or (state~=Enum.HumanoidStateType.Jumping and state~=Enum.HumanoidStateType.Freefall) then Air.Reset() groundWalkSpeed=h.WalkSpeed return end
+ if h.FloorMaterial~=Enum.Material.Air or (state~=Enum.HumanoidStateType.Jumping and state~=Enum.HumanoidStateType.Freefall) then
+  Air.Reset()
+  if not metalMoving then
+   local raw=controls:GetMoveVector()
+   local target=raw.Magnitude>0.01 and groundWalkSpeed or 0
+   local acceleration=settings and settings.GroundAcceleration or 100
+   groundCommand=math.clamp(groundCommand+math.sign(target-groundCommand)*acceleration*dt,0,groundWalkSpeed)
+   if math.abs(target-groundCommand)<acceleration*dt then groundCommand=target end
+   h.WalkSpeed=groundCommand h.AutoRotate=true
+  else groundCommand=0 end
+  return
+ end
  if not active then walkSpeed=groundWalkSpeed autoRotate=h.AutoRotate end
  active=true
  local raw=controls:GetMoveVector()
@@ -63,7 +80,7 @@ function Air.Step(dt)
  local flat=Air.Horizontal(Vector3.new(v.X,0,v.Z),input,dt)
  command=flat
  r.AssemblyLinearVelocity=Vector3.new(flat.X,v.Y,flat.Z)
- h.WalkSpeed=flat.Magnitude h.AutoRotate=false
+ h.WalkSpeed=flat.Magnitude h.AutoRotate=true
  h:Move(flat.Magnitude>0.01 and flat.Unit or Vector3.zero,false)
 
  blend=math.min(1,blend+dt*9)
@@ -71,7 +88,7 @@ function Air.Step(dt)
  local pose={Root=angles(-8*lean,0,0),Waist=angles(-6,0,0),Neck=angles(8,0,0),
  RightHip=angles(48,0,8),LeftHip=angles(38,0,-8),RightKnee=angles(-72,0,0),LeftKnee=angles(-62,0,0),
  RightAnkle=angles(15,0,0),LeftAnkle=angles(15,0,0),
- RightShoulder=angles(30,0,65)*angles(0,180,0),LeftShoulder=angles(30,0,-65)*angles(0,180,0),RightElbow=angles(-65,0,0),LeftElbow=angles(-65,0,0)}
+ RightShoulder=angles(0,0,90),LeftShoulder=angles(0,0,-90),RightElbow=CFrame.identity,LeftElbow=CFrame.identity,RightWrist=CFrame.identity,LeftWrist=CFrame.identity}
  pose.RootJoint=pose.Root
  pose["Right Hip"]=angles(25,0,8) pose["Left Hip"]=angles(20,0,-8)
  pose["Right Shoulder"]=pose.RightShoulder pose["Left Shoulder"]=pose.LeftShoulder
@@ -86,13 +103,8 @@ RunService:BindToRenderStep("AerialMomentum",Enum.RenderPriority.Last.Value,func
   humanoid.WalkSpeed=command.Magnitude
   humanoid:Move(command.Magnitude>0.01 and command.Unit or Vector3.zero,false)
  end
- -- Use actual travel, not the camera or requested key direction. Face walking,
- -- coasting, sliding and airborne travel alike, retaining heading at rest.
- if not humanoid.Sit then
-  humanoid.AutoRotate=false
-  local v=root.AssemblyLinearVelocity local flat=Vector3.new(v.X,0,v.Z)
-  if flat.Magnitude>0.1 then root.CFrame=CFrame.lookAt(root.Position,root.Position+flat.Unit) end
- end
+ -- Roblox's AutoRotate smoothly follows the movement direction supplied above.
+ humanoid.AutoRotate=true
 end)
 player.CharacterRemoving:Connect(Air.Reset)
 return Air

@@ -38,11 +38,7 @@ function Pose.Step(c,h,r,sliding,direction,pull,push)
  if not wasSliding then autoRotate=h.AutoRotate end
  wasSliding=true
  c:SetAttribute("MetalSliding",true)
- h.AutoRotate=false
- if direction.Magnitude>0.1 then
-  local flat=Vector3.new(direction.X,0,direction.Z)
-  if flat.Magnitude>0.1 then r.CFrame=CFrame.lookAt(r.Position,r.Position+flat.Unit) end
- end
+ h.AutoRotate=true
  -- Lower the visible rig, not the physics root or Humanoid hip height.
  local scale=h.HipHeight/2
  local pose={

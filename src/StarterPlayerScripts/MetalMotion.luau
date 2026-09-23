@@ -125,8 +125,8 @@ function Motion.Cancel()
  if actuator then actuator:Destroy() actuator=nil end
  if attachment then attachment:Destroy() attachment=nil end
  if humanoid and humanoid.Parent then
-  humanoid.AutoRotate=previousAutoRotate~=false
-  if previousWalkSpeed then humanoid.WalkSpeed=previousWalkSpeed end
+  humanoid.AutoRotate=true
+  humanoid.WalkSpeed=Motion.Settings.GroundSpeed
   humanoid:Move(Vector3.zero)
 
  end
@@ -189,7 +189,7 @@ function Motion.Resultant(position,pullPosition,pushPosition)
  return result
 end
 RunService.PreSimulation:Connect(function(dt)
- Air.Step(dt)
+ Air.Step(dt,Motion.Settings,moving)
  if not moving then return end
  if not root or not root.Parent or not humanoid or humanoid.Health<=0 then Motion.Cancel() return end
  for directionSign,part in pairs(targets) do

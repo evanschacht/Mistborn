@@ -30,8 +30,8 @@ local function selectAnchor(part)
  highlight.Enabled=part~=nil
  effects:SetAttribute("SelectedAnchor",part and part.Name or "")
 end
--- Six soft radial ribbons create a round energy volume instead of a camera-facing strip.
-local RADIAL_LAYERS=6
+-- One soft ribbon avoids angle-dependent additive overlap between beam layers.
+local RADIAL_LAYERS=1
 local function addAnchor(part)
  if not part:IsA("BasePart") or entries[part] then return end
  local entry={layers={},outline={}}
@@ -59,7 +59,7 @@ local function addAnchor(part)
   line.Name="LineTo_"..part.Name.."_"..i
   line.Attachment0=origin
   line.Attachment1=endpoint
-  line.FaceCamera=false
+  line.FaceCamera=true
   line.Segments=1
   line.LightEmission=0.55
   line.LightInfluence=0
@@ -155,8 +155,7 @@ RunService.RenderStepped:Connect(function()
    local reference=math.abs(direction.Y)>0.98 and Vector3.xAxis or Vector3.yAxis
    local radial=direction:Cross(reference).Unit
    local other=direction:Cross(radial).Unit
-   local size=(part.Size.X*part.Size.Y*part.Size.Z)^(1/3)
-   local width=math.clamp(0.4864*(size/6)^0.65,0.256,1.2288)
+   local width=0.4864
    local active=part==selected
    if active then width*=1.4 end
    local color=ColorSequence.new(active and Color3.fromRGB(130,230,255) or Color3.fromRGB(40,155,255))

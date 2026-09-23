@@ -1,5 +1,10 @@
 local Config={}
 Config.Specs={
+ {key="GroundSpeed",title="Ground walking speed",min=0,max=100,step=1,default=16,unit=" studs/s",hint="Walking speed only; separate from air and metal sliding."},
+ {key="GroundAcceleration",title="Ground walking acceleration",min=0,max=500,step=5,default=100,unit=" studs/s²",hint="How quickly walking builds speed."},
+ {key="AirSpeed",title="Aerial movement speed",min=0,max=200,step=1,default=64,unit=" studs/s",hint="Speed added by WASD in the air; preserves faster metal momentum."},
+ {key="AirAcceleration",title="Aerial acceleration",min=0,max=1000,step=5,default=240,unit=" studs/s²",hint="How quickly airborne WASD changes your movement."},
+ {key="Gravity",title="Gravity",min=0,max=400,step=1,default=60,unit=" studs/s²",hint="Continuous downward acceleration, including metal flight."},
  {key="AnchorRange",title="Steel and iron range",min=0,max=500,step=1,default=180,unit=" studs",hint="Reach of blue lines, selection and push/pull, in studs."},
  {key="ForceFalloff",title="Force falloff",min=0,max=5,step=0.05,default=1,unit="",hint="0 = constant; 1 = inverse-linear; higher = faster weakening."},
  {key="ForceNearClamp",title="Close clamp distance",min=0.1,max=50,step=0.1,default=5,unit=" studs",hint="Full force inside this distance. Cannot spike at contact."},
@@ -29,7 +34,7 @@ function Config.Validate(data)
  for _,spec in Config.Specs do
   local v,r=data.values[spec.key],data.ranges[spec.key]
   -- Migrate older master saves without discarding their existing tuning.
-  if v==nil and r==nil and (spec.key=="ForceFalloff" or spec.key=="ForceNearClamp" or spec.key=="ForceFarClamp") then
+  if v==nil and r==nil and (spec.key=="ForceFalloff" or spec.key=="ForceNearClamp" or spec.key=="ForceFarClamp" or spec.key=="GroundSpeed" or spec.key=="GroundAcceleration" or spec.key=="AirSpeed" or spec.key=="AirAcceleration" or spec.key=="Gravity") then
    v=spec.default r={spec.min,spec.max}
   end
   if typeof(r)~="table" then return nil end
