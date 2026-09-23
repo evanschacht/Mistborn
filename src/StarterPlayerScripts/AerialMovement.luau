@@ -21,6 +21,8 @@ local joints,saved={},{}
 local active=false
 local walkSpeed,autoRotate
 local blend=0
+local command=Vector3.zero
+local groundWalkSpeed=16
 local function angles(x,y,z) return CFrame.Angles(math.rad(x),math.rad(y),math.rad(z)) end
 local function restorePose()
  for joint,value in saved do if joint.Parent then joint.Transform=value end end
@@ -29,7 +31,7 @@ end
 function Air.Reset()
  restorePose()
  if active and humanoid and humanoid.Parent then humanoid.WalkSpeed=walkSpeed humanoid.AutoRotate=autoRotate end
- active=false blend=0
+ active=false blend=0 command=Vector3.zero
 end
 function Air.Horizontal(velocity,input,dt)
  if input.Magnitude>0.01 then
@@ -49,8 +51,8 @@ function Air.Step(dt)
   for _,j in c:GetDescendants() do if j:IsA("Motor6D") or j:IsA("AnimationConstraint") then joints[j.Name]=j end end
  end
  local state=h:GetState()
- if h.FloorMaterial~=Enum.Material.Air or (state~=Enum.HumanoidStateType.Jumping and state~=Enum.HumanoidStateType.Freefall) then Air.Reset() return end
- if not active then walkSpeed=h.WalkSpeed autoRotate=h.AutoRotate end
+ if h.FloorMaterial~=Enum.Material.Air or (state~=Enum.HumanoidStateType.Jumping and state~=Enum.HumanoidStateType.Freefall) then Air.Reset() groundWalkSpeed=h.WalkSpeed return end
+ if not active then walkSpeed=groundWalkSpeed autoRotate=h.AutoRotate end
  active=true
  local raw=controls:GetMoveVector()
  local cam=workspace.CurrentCamera
@@ -59,12 +61,11 @@ function Air.Step(dt)
  local input=forward*(-raw.Z)+forward:Cross(Vector3.yAxis)*raw.X
  local v=r.AssemblyLinearVelocity
  local flat=Air.Horizontal(Vector3.new(v.X,0,v.Z),input,dt)
+ command=flat
  r.AssemblyLinearVelocity=Vector3.new(flat.X,v.Y,flat.Z)
  h.WalkSpeed=flat.Magnitude h.AutoRotate=false
  h:Move(flat.Magnitude>0.01 and flat.Unit or Vector3.zero,false)
- if flat.Magnitude>2 then
-  r.CFrame=r.CFrame:Lerp(CFrame.lookAt(r.Position,r.Position+flat.Unit),1-math.exp(-10*dt))
- end
+
  blend=math.min(1,blend+dt*9)
  local lean=math.min(flat.Magnitude/32,1)
  local pose={Root=angles(-8*lean,0,0),Waist=angles(-6,0,0),Neck=angles(8,0,0),
@@ -77,10 +78,20 @@ function Air.Step(dt)
  for name,target in pose do local j=joints[name] if j then saved[j]=j.Transform j.Transform=j.Transform:Lerp(target,blend) end end
 end
 RunService.PreAnimation:Connect(restorePose)
-RunService:BindToRenderStep("AerialMomentum",Enum.RenderPriority.Input.Value+2,function()
- if active and root and root.Parent then
+-- Run after Roblox controls: never replace freshly computed steering with the
+-- previous physics frame's velocity (which could be zero after a standing jump).
+RunService:BindToRenderStep("AerialMomentum",Enum.RenderPriority.Last.Value,function()
+ if not humanoid or not root or not root.Parent or humanoid.Health<=0 then return end
+ if active then
+  humanoid.WalkSpeed=command.Magnitude
+  humanoid:Move(command.Magnitude>0.01 and command.Unit or Vector3.zero,false)
+ end
+ -- Use actual travel, not the camera or requested key direction. Face walking,
+ -- coasting, sliding and airborne travel alike, retaining heading at rest.
+ if not humanoid.Sit then
+  humanoid.AutoRotate=false
   local v=root.AssemblyLinearVelocity local flat=Vector3.new(v.X,0,v.Z)
-  humanoid.WalkSpeed=flat.Magnitude humanoid:Move(flat.Magnitude>0.01 and flat.Unit or Vector3.zero,false)
+  if flat.Magnitude>0.1 then root.CFrame=CFrame.lookAt(root.Position,root.Position+flat.Unit) end
  end
 end)
 player.CharacterRemoving:Connect(Air.Reset)
