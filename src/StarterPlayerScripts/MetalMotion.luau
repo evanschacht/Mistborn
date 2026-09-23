@@ -205,7 +205,7 @@ RunService.PreSimulation:Connect(function(dt)
    local direction=ForceGeometry.Direction(part.CFrame,part.Size,root.CFrame,root.Size,directionSign)
    local along=current:Dot(direction)
    local strength=directionSign==1 and Motion.Settings.PullAcceleration or Motion.Settings.PushAcceleration
-   strength*=Config.ForceScale(delta.Magnitude,Motion.Settings)
+   strength*=Config.ForceScale(delta.Magnitude,Motion.Settings,directionSign)
    local speed=directionSign==1 and Motion.Settings.PullSpeed or Motion.Settings.PushSpeed
    topSpeed=math.max(topSpeed,speed)
    local thrust=grounded and strength or math.min(strength,math.max(speed-along,0)/math.max(dt,0.001))

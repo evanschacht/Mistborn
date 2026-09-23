@@ -4,7 +4,7 @@ local m=require(p.PlayerScripts.MetalMotion)
 local r=p.Character.HumanoidRootPart
 local h=p.Character.Humanoid
 local saved=m.Snapshot(true)
-m.SetSetting("ForceFalloff",0) -- Isolate gravity from the separate distance curve tests.
+m.SetSetting("PullFalloff",0) m.SetSetting("PushFalloff",0) -- Isolate gravity from the separate distance curve tests.
 local original=r.CFrame
 local results={}
 local anchor=Instance.new("Part")

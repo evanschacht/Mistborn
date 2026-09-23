@@ -21,7 +21,7 @@ check("Older master tuning migrates",migrated and migrated.values.ForceNearClamp
 local a=Instance.new("Part") a.Name="FalloffTestAnchor" a.Anchored=true a.CanCollide=false a.Parent=workspace.MetalAnchors
 local follow
 local ok,err=pcall(function()
- m.SetSetting("ForceFalloff",1) m.SetSetting("ForceNearClamp",5) m.SetSetting("ForceFarClamp",150)
+ m.SetSetting("PullFalloff",1) m.SetSetting("PushFalloff",1) m.SetSetting("ForceNearClamp",5) m.SetSetting("ForceFarClamp",150)
  m.SetSetting("AnchorRange",290)
  m.SetSetting("PullAcceleration",230) m.SetSetting("PushAcceleration",230)
  for _,sign in {1,-1} do for _,distance in {5,20,200} do
