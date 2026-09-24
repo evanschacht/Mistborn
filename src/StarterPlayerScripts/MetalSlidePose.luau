@@ -4,6 +4,7 @@ local Pose={}
 local character,humanoid,root
 local joints,saved={},{}
 local wasSliding=false
+local lean=Vector2.zero
 local autoRotate=true
 local function angles(x,y,z) return CFrame.Angles(math.rad(x),math.rad(y),math.rad(z)) end
 local function restore()
@@ -32,19 +33,21 @@ local function aim(frame,target)
  if axis.Magnitude<0.0001 then return dot>0 and CFrame.identity or angles(180,0,0) end
  return CFrame.fromAxisAngle(axis.Unit,math.acos(dot))
 end
-function Pose.Step(c,h,r,sliding,direction,pull,push)
+function Pose.Step(c,h,r,sliding,direction,pull,push,input,dt)
  if character~=c then bind(c,h,r) end
  if not sliding then Pose.Clear() return end
  if not wasSliding then autoRotate=h.AutoRotate end
  wasSliding=true
  c:SetAttribute("MetalSliding",true)
  h.AutoRotate=true
+ lean=lean:Lerp(input or Vector2.zero,1-math.exp(-10*(dt or 1/60)))
+ c:SetAttribute("SlideForwardLean",lean.Y) c:SetAttribute("SlideSideLean",lean.X)
  -- Lower the visible rig, not the physics root or Humanoid hip height.
  local scale=h.HipHeight/2
  local pose={
-  Root=CFrame.new(0,-1.3*scale,0)*angles(-8,0,22),
-  Waist=angles(-10,-12,10),
-  Neck=angles(12,12,-22),
+  Root=CFrame.new(0,-1.3*scale,0)*angles(-8-12*lean.Y,0,22-14*lean.X),
+  Waist=angles(-10-14*lean.Y,-12,10-8*lean.X),
+  Neck=angles(12+10*lean.Y,12,-22+12*lean.X),
   RightHip=angles(82,-8,5), RightKnee=angles(-8,0,0), RightAnkle=angles(-12,0,0),
   LeftHip=angles(65,20,-25), LeftKnee=angles(-132,0,0), LeftAnkle=angles(32,0,0),
   LeftShoulder=angles(-12,0,-35), LeftElbow=angles(-12,0,0), LeftWrist=angles(0,0,-20),

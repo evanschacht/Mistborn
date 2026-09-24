@@ -1,5 +1,10 @@
 local Config={}
 Config.Specs={
+ {key="SlideWAcceleration",title="Slide W acceleration",min=0,max=200,step=1,default=25,unit=" studs/s^2",hint="Extra forward acceleration while sliding."},
+ {key="SlideWTopSpeed",title="Slide W top speed",min=0,max=500,step=5,default=200,unit=" studs/s",hint="W boost limit; does not slow faster inherited momentum."},
+ {key="SlideBraking",title="Slide S braking",min=0,max=1000,step=5,default=120,unit=" studs/s^2",hint="Brakes toward zero without reversing. Metal thrust still applies."},
+ {key="SlideLeftSteering",title="Slide A steering",min=0,max=360,step=5,default=65,unit=" deg/s",hint="Left turn rate relative to slide direction."},
+ {key="SlideRightSteering",title="Slide D steering",min=0,max=360,step=5,default=65,unit=" deg/s",hint="Right turn rate relative to slide direction."},
  {key="GroundSpeed",title="Ground walking speed",min=0,max=100,step=1,default=16,unit=" studs/s",hint="Walking speed only; separate from air and metal sliding."},
  {key="GroundAcceleration",title="Ground walking acceleration",min=0,max=500,step=5,default=100,unit=" studs/s�",hint="How quickly walking builds speed."},
  {key="AirSpeed",title="Aerial movement speed",min=0,max=200,step=1,default=64,unit=" studs/s",hint="Speed added by WASD in the air; preserves faster metal momentum."},
@@ -42,7 +47,7 @@ function Config.Validate(data)
    v=data.values.ForceFalloff or spec.default r=data.ranges.ForceFalloff or {spec.min,spec.max}
   end
   -- Migrate older master saves without discarding their existing tuning.
-  if v==nil and r==nil and (spec.key=="ForceFalloff" or spec.key=="ForceNearClamp" or spec.key=="ForceFarClamp" or spec.key=="GroundSpeed" or spec.key=="GroundAcceleration" or spec.key=="AirSpeed" or spec.key=="AirAcceleration" or spec.key=="Gravity" or spec.key=="AirDrag" or spec.key=="JumpStrength") then
+  if v==nil and r==nil and (spec.key=="ForceFalloff" or spec.key=="ForceNearClamp" or spec.key=="ForceFarClamp" or spec.key=="GroundSpeed" or spec.key=="GroundAcceleration" or spec.key=="AirSpeed" or spec.key=="AirAcceleration" or spec.key=="Gravity" or spec.key=="AirDrag" or spec.key=="JumpStrength" or spec.key=="SlideWAcceleration" or spec.key=="SlideWTopSpeed" or spec.key=="SlideBraking" or spec.key=="SlideLeftSteering" or spec.key=="SlideRightSteering") then
    v=spec.default r={spec.min,spec.max}
   end
   if typeof(r)~="table" then return nil end

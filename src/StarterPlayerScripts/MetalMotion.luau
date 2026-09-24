@@ -2,6 +2,7 @@ local Players=game:GetService("Players")
 local RunService=game:GetService("RunService")
 local player=Players.LocalPlayer
 local Motion={}
+local SlideControl=require(script.Parent:WaitForChild("MetalSlideControl"))
 local Air=require(script.Parent:WaitForChild("AerialMovement"))
 local SlidePose=require(script.Parent:WaitForChild("MetalSlidePose"))
 function Motion.IsInRange(part,position)
@@ -88,7 +89,8 @@ Motion.ApplySettings(require(game:GetService("ReplicatedStorage"):WaitForChild("
 function Motion.StepGround(velocity,acceleration,dt,powered,cap,friction,cutoff)
  if powered then
   local nextVelocity=velocity+acceleration*dt
-  if nextVelocity.Magnitude>cap then nextVelocity=nextVelocity.Unit*cap end
+  local limit=math.max(cap,velocity.Magnitude)
+  if nextVelocity.Magnitude>limit then nextVelocity=nextVelocity.Unit*limit end
   return nextVelocity
  end
  local nextVelocity=velocity*math.exp(-friction*dt)
@@ -198,6 +200,7 @@ RunService.PreSimulation:Connect(function(dt)
  local current=root.AssemblyLinearVelocity
  local acceleration=Vector3.zero
  local grounded=humanoid.FloorMaterial~=Enum.Material.Air
+ local slideInput=grounded and SlideControl.Read() or Vector2.zero
  local topSpeed=0
  for directionSign,part in pairs(targets) do
   local delta=part.Position-root.Position
@@ -228,7 +231,13 @@ RunService.PreSimulation:Connect(function(dt)
   -- A substantial collision/deflection resets the command to actual motion.
   if groundCommand and (groundCommand-horizontal).Magnitude>math.max(8,groundCommand.Magnitude*0.5) then groundCommand=nil end
   local startVelocity=active and groundCommand or horizontal
-  local groundVelocity=Motion.StepGround(startVelocity or horizontal,Vector3.new(acceleration.X,0,acceleration.Z),dt,active,topSpeed,Motion.Settings.CoastDrag,Motion.Settings.StopSpeed)
+  local groundVelocity=Motion.StepGround(startVelocity or horizontal,Vector3.new(acceleration.X,0,acceleration.Z),dt,active,topSpeed,slideInput.Y>0 and 0 or Motion.Settings.CoastDrag,slideInput.Y>0 and 0 or Motion.Settings.StopSpeed)
+  if slideInput.Y<0 then
+   -- Braking wins over additional ground thrust, without reversing momentum.
+   local speed=math.min(groundVelocity.Magnitude,(startVelocity or horizontal).Magnitude)
+   groundVelocity=groundVelocity.Magnitude>0.001 and groundVelocity.Unit*speed or Vector3.zero
+  end
+  groundVelocity=SlideControl.Step(groundVelocity,slideInput,Motion.Settings,dt)
   groundCommand=active and groundVelocity or nil
   -- Own only ground horizontal velocity; retain gravity, jumps and collision response.
   root.AssemblyLinearVelocity=Vector3.new(groundVelocity.X,current.Y,groundVelocity.Z)
@@ -245,7 +254,7 @@ RunService.PreSimulation:Connect(function(dt)
 
  end
  actuator.Force=acceleration*root.AssemblyMass
- SlidePose.Step(root.Parent,humanoid,root,grounded,slideDirection,targets[1],targets[-1])
+ SlidePose.Step(root.Parent,humanoid,root,grounded,slideDirection,targets[1],targets[-1],slideInput,dt)
 
  if not active and ((grounded and horizontal.Magnitude<=0.001) or (not grounded and horizontal.Magnitude<1)) then Motion.Cancel() end
 
