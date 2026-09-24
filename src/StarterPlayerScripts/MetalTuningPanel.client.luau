@@ -62,8 +62,39 @@ local list=make("ScrollingFrame",{Name="Sliders",Position=UDim2.fromOffset(12,68
 make("UIListLayout",{Padding=UDim.new(0,6),SortOrder=Enum.SortOrder.LayoutOrder},list)
 local drag
 local updates={}
+
+-- Categories start closed; each expands independently inside the scrolling area.
+local groups={
+ {name="GroundMovement",title="Ground movement",keys={"GroundSpeed","GroundAcceleration"}},
+ {name="AerialMovement",title="Aerial movement",keys={"AirSpeed","AirAcceleration","AirDrag","JumpStrength","Gravity"}},
+ {name="Sliding",title="Sliding",keys={"SlideWAcceleration","SlideWTopSpeed","SlideBraking","SlideLeftSteering","SlideRightSteering","CoastDrag","StopSpeed"}},
+ {name="PushPull",title="Push & pull",keys={"PullAcceleration","PushAcceleration","PullSpeed","PushSpeed","PullFalloff","PushFalloff","ForceNearClamp","ForceFarClamp"}},
+ {name="MetalSensing",title="Metal sensing",keys={"AnchorRange"}},
+}
+local rowParents={}
+local rowOrders={}
+for order,group in groups do
+ local section=make("Frame",{Name=group.name,Size=UDim2.new(1,-8,0,34),LayoutOrder=order,BackgroundTransparency=1},list)
+ local toggle=make("TextButton",{Name="Toggle",Size=UDim2.new(1,0,0,34),BackgroundColor3=Color3.fromRGB(34,51,70),BorderSizePixel=0,Text="+  "..group.title,TextColor3=Color3.fromRGB(177,226,255),Font=Enum.Font.GothamMedium,TextSize=13,TextXAlignment=Enum.TextXAlignment.Left},section)
+ make("UICorner",{CornerRadius=UDim.new(0,6)},toggle)
+ make("UIPadding",{PaddingLeft=UDim.new(0,10)},toggle)
+ local body=make("Frame",{Name="Rows",Position=UDim2.fromOffset(0,40),Size=UDim2.new(1,0,0,#group.keys*162-6),BackgroundTransparency=1,Visible=false},section)
+ make("UIListLayout",{Padding=UDim.new(0,6),SortOrder=Enum.SortOrder.LayoutOrder},body)
+ section:SetAttribute("Expanded",false)
+ local function refreshSection()
+  local expanded=section:GetAttribute("Expanded")==true
+  body.Visible=expanded
+  section.Size=UDim2.new(1,-8,0,expanded and (40+#group.keys*162-6) or 34)
+  toggle.Text=(expanded and "-  " or "+  ")..group.title
+  if not expanded then drag=nil list.ScrollingEnabled=true end
+ end
+ section:GetAttributeChangedSignal("Expanded"):Connect(refreshSection)
+ toggle.Activated:Connect(function() section:SetAttribute("Expanded",not section:GetAttribute("Expanded")) end)
+ for position,key in group.keys do rowParents[key]=body rowOrders[key]=position end
+end
+
 for index,spec in Motion.SettingSpecs do
- local row=make("Frame",{Name=spec.key,Size=UDim2.new(1,-8,0,156),LayoutOrder=index,BackgroundTransparency=1},list)
+ local row=make("Frame",{Name=spec.key,Size=UDim2.new(1,0,0,156),LayoutOrder=rowOrders[spec.key] or index,BackgroundTransparency=1},assert(rowParents[spec.key],"Missing tuning category: "..spec.key))
  make("TextLabel",{Size=UDim2.new(1,0,0,20),BackgroundTransparency=1,Text=spec.title,TextColor3=Color3.fromRGB(233,239,246),TextSize=13,Font=Enum.Font.GothamMedium,TextXAlignment=Enum.TextXAlignment.Left},row)
  local value=make("TextBox",{Name="Value",ClearTextOnFocus=false,Position=UDim2.fromOffset(0,21),Size=UDim2.new(1,0,0,20),BackgroundColor3=Color3.fromRGB(28,40,55),BorderSizePixel=0,TextColor3=Color3.fromRGB(95,202,255),Font=Enum.Font.Gotham,TextSize=12,TextXAlignment=Enum.TextXAlignment.Left},row)
  local hit=make("TextButton",{Name="Slider",Position=UDim2.fromOffset(0,39),Size=UDim2.new(1,0,0,24),Text="",AutoButtonColor=false,BackgroundTransparency=1},row)

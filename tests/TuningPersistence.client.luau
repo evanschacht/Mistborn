@@ -8,7 +8,7 @@ local results={}
 local function check(name,pass) table.insert(results,{name=name,passed=pass}) assert(pass,name) end
 check("Save below Reset All",gui.Panel.Content.Save.Position.Y.Offset>gui.Panel.Content.Reset.Position.Y.Offset)
 for _,spec in motion.SettingSpecs do
- check("Reset button: "..spec.key,gui.Panel.Content.Sliders[spec.key]:FindFirstChild("ResetDefault")~=nil)
+ check("Reset button: "..spec.key,gui.Panel.Content.Sliders:FindFirstChild(spec.key,true):FindFirstChild("ResetDefault")~=nil)
 end
 motion.SetRange("CoastDrag",0,30)
 motion.SetSetting("CoastDrag",8)

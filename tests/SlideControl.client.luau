@@ -12,7 +12,7 @@ assert(c.Step(v,Vector2.new(1,0),settings,.1).X>0)
 assert(math.abs(c.Step(v,Vector2.new(1,0),settings,.1).Magnitude-100)<.01)
 local old=m.Snapshot(true)
 for _,k in {"SlideWAcceleration","SlideWTopSpeed","SlideBraking","SlideLeftSteering","SlideRightSteering"} do
- assert(p.PlayerGui.MetalTuning.Panel.Content.Sliders:FindFirstChild(k))
+ assert(p.PlayerGui.MetalTuning.Panel.Content.Sliders:FindFirstChild(k,true))
  old.values[k]=nil old.ranges[k]=nil
 end
 assert(config.Validate(old).values.SlideWTopSpeed==200)

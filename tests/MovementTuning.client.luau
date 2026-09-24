@@ -6,7 +6,7 @@ local results={}
 local function check(name,ok) results[name]=ok assert(ok,name) end
 local ok,err=pcall(function()
  for _,k in {"GroundSpeed","GroundAcceleration","AirSpeed","AirAcceleration","Gravity"} do
-  check(k.." UI",p.PlayerGui.MetalTuning.Panel.Content.Sliders:FindFirstChild(k)~=nil)
+  check(k.." UI",p.PlayerGui.MetalTuning.Panel.Content.Sliders:FindFirstChild(k,true)~=nil)
  end
  local old=m.Snapshot(true)
  for _,k in {"GroundSpeed","GroundAcceleration","AirSpeed","AirAcceleration","Gravity"} do old.values[k]=nil old.ranges[k]=nil end

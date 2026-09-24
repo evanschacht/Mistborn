@@ -12,5 +12,5 @@ local migrated=c.Validate(old)
 assert(migrated.values.PullFalloff==.35 and migrated.values.PushFalloff==.35)
 assert(migrated.ranges.PushFalloff[2]==7 and migrated.ranges.PullFalloff[2]==7)
 local rows=p.PlayerGui.MetalTuning.Panel.Content.Sliders
-assert(rows.PullFalloff and rows.PushFalloff and not rows:FindFirstChild("ForceFalloff"))
+assert(rows:FindFirstChild("PullFalloff",true) and rows:FindFirstChild("PushFalloff",true) and not rows:FindFirstChild("ForceFalloff",true))
 return "Independent curves, shared cutoff, old-save migration and both UI controls passed"
