@@ -17,7 +17,7 @@ Config.Specs={
  {key="AirDrag",title="Air drag",min=0,max=8,step=0.05,default=0.15,unit="",hint="Horizontal resistance while airborne with WASD released. 0 = no drag."},
  {key="JumpStrength",title="Jump strength",min=0,max=50,step=0.5,default=8,unit=" studs",hint="Height of an ordinary jump. 0 disables jumping."},
  {key="Gravity",title="Gravity",min=0,max=400,step=1,default=60,unit=" studs/s�",hint="Continuous downward acceleration, including metal flight."},
- {key="AnchorRange",title="Steel and iron range",min=0,max=500,step=1,default=180,unit=" studs",hint="Reach of blue lines, selection and push/pull, in studs."},
+ {key="AnchorRange",title="Steel and iron range",min=0,max=500,step=1,default=180,unit=" studs",hint="Range for a 6-stud cube. Smaller anchors have less reach; larger anchors have more."},
  {key="PullFalloff",title="Pull force falloff",min=0,max=5,step=0.05,default=1,unit="",hint="0 = constant; 1 = inverse-linear; higher = faster weakening."},
  {key="PushFalloff",title="Push force falloff",min=0,max=5,step=0.05,default=1,unit="",hint="0 = constant; 1 = inverse-linear; higher = faster weakening."},
  {key="ForceNearClamp",title="Close clamp distance",min=0.1,max=50,step=0.1,default=5,unit=" studs",hint="Full force inside this distance. Cannot spike at contact."},
@@ -33,8 +33,22 @@ Config.Specs={
 local function finite(n)
  return typeof(n)=="number" and n==n and math.abs(n)<math.huge
 end
-function Config.ForceScale(distance,settings,directionSign)
- if distance>=settings.AnchorRange then return 0 end
+-- Six-stud cube is the reference size; use equivalent cube side length.
+function Config.SizeScale(size)
+ return (size.X*size.Y*size.Z)^(1/3)/6
+end
+function Config.AnchorRangeForSize(size,baseRange)
+ return math.max(0,baseRange)*Config.SizeScale(size)
+end
+function Config.LineStyle(size,distance,baseRange)
+ local range=Config.AnchorRangeForSize(size,baseRange)
+ local proximity=1-math.clamp(distance/math.max(range,0.001),0,1)
+ local width=0.4864*math.clamp(Config.SizeScale(size),0.25,3)*(0.55+0.45*proximity)
+ local transparency=0.2+0.3*(1-proximity)
+ return width,transparency
+end
+function Config.ForceScale(distance,settings,directionSign,effectiveRange)
+ if distance>=(effectiveRange or settings.AnchorRange) then return 0 end
  local near=math.max(0.1,settings.ForceNearClamp)
  local far=math.max(near,settings.ForceFarClamp)
  local d=math.clamp(distance,near,far)

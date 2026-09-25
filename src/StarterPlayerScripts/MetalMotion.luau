@@ -2,15 +2,15 @@ local Players=game:GetService("Players")
 local RunService=game:GetService("RunService")
 local player=Players.LocalPlayer
 local Motion={}
+local Config=require(game:GetService("ReplicatedStorage"):WaitForChild("MetalTuningConfig"))
 local SlideControl=require(script.Parent:WaitForChild("MetalSlideControl"))
 local Air=require(script.Parent:WaitForChild("AerialMovement"))
 local SlidePose=require(script.Parent:WaitForChild("MetalSlidePose"))
 function Motion.IsInRange(part,position)
  if not part or not part:IsA("BasePart") or part.Parent~=workspace:FindFirstChild("MetalAnchors") then return false end
  local distance=(part.Position-position).Magnitude
- return distance>0.1 and distance<Motion.Settings.AnchorRange
+ return distance>0.1 and distance<Config.AnchorRangeForSize(part.Size,Motion.Settings.AnchorRange)
 end
-local Config=require(game:GetService("ReplicatedStorage"):WaitForChild("MetalTuningConfig"))
 local ForceGeometry=require(game:GetService("ReplicatedStorage"):WaitForChild("MetalForceGeometry"))
 Motion.SettingSpecs=Config.Specs
 -- Attributes share live values across UI, controller, and Studio inspection contexts.
@@ -208,7 +208,7 @@ RunService.PreSimulation:Connect(function(dt)
    local direction=ForceGeometry.Direction(part.CFrame,part.Size,root.CFrame,root.Size,directionSign)
    local along=current:Dot(direction)
    local strength=directionSign==1 and Motion.Settings.PullAcceleration or Motion.Settings.PushAcceleration
-   strength*=Config.ForceScale(delta.Magnitude,Motion.Settings,directionSign)
+   strength*=Config.ForceScale(delta.Magnitude,Motion.Settings,directionSign,Config.AnchorRangeForSize(part.Size,Motion.Settings.AnchorRange))
    local speed=directionSign==1 and Motion.Settings.PullSpeed or Motion.Settings.PushSpeed
    topSpeed=math.max(topSpeed,speed)
    local thrust=grounded and strength or math.min(strength,math.max(speed-along,0)/math.max(dt,0.001))

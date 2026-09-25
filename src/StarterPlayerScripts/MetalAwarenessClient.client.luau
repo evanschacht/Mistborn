@@ -22,6 +22,7 @@ local selected
 local root
 local hovered
 local Motion=require(script.Parent:WaitForChild("MetalMotion"))
+local Config=require(game:GetService("ReplicatedStorage"):WaitForChild("MetalTuningConfig"))
 local heldKeys={}
 local function selectAnchor(part)
  if selected==part then return end
@@ -155,10 +156,8 @@ RunService.RenderStepped:Connect(function()
    local reference=math.abs(direction.Y)>0.98 and Vector3.xAxis or Vector3.yAxis
    local radial=direction:Cross(reference).Unit
    local other=direction:Cross(radial).Unit
-   local width=0.4864
-   local active=part==selected
-   if active then width*=1.4 end
-   local color=ColorSequence.new(active and Color3.fromRGB(130,230,255) or Color3.fromRGB(40,155,255))
+   local width,transparency=Config.LineStyle(part.Size,delta.Magnitude,Motion.Settings.AnchorRange)
+   local color=ColorSequence.new(Color3.fromRGB(40,155,255))
    for _,layer in entry.layers do
     if layer.origin.Parent~=root then layer.origin.Parent=root end
     local up=radial*math.cos(layer.angle)+other*math.sin(layer.angle)
@@ -168,6 +167,7 @@ RunService.RenderStepped:Connect(function()
     layer.line.Width0=width
     layer.line.Width1=width
     layer.line.Color=color
+    layer.line.Transparency=NumberSequence.new(transparency)
    end
   end
   for _,layer in entry.layers do layer.line.Enabled=enabled end
