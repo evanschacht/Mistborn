@@ -17,6 +17,7 @@ function controls:GetMoveVector()
 end
 local FlightPose=require(script.Parent:WaitForChild("AerialFlightPose"))
 local flightBlend=0
+local squatBlend=0
 local Air={Speed=64,Acceleration=240,Drag=0.15}
 local character,humanoid,root
 local joints,saved={},{}
@@ -34,8 +35,8 @@ end
 function Air.Reset()
  restorePose()
  if active and humanoid and humanoid.Parent then humanoid.WalkSpeed=groundWalkSpeed humanoid.AutoRotate=true end
- active=false blend=0 flightBlend=0 command=Vector3.zero
- if character then character:SetAttribute("AerialFlightBlend",0) end
+ active=false blend=0 flightBlend=0 squatBlend=0 command=Vector3.zero
+ if character then character:SetAttribute("AerialFlightBlend",0) character:SetAttribute("AerialSquatBlend",0) end
 end
 function Air.Horizontal(velocity,input,dt)
  if input.Magnitude>0.01 then
@@ -95,6 +96,13 @@ function Air.Step(dt,settings,metalMoving,pull,push)
  RightHip=angles(48,0,8),LeftHip=angles(38,0,-8),RightKnee=angles(-72,0,0),LeftKnee=angles(-62,0,0),
  RightAnkle=angles(15,0,0),LeftAnkle=angles(15,0,0),
  RightShoulder=angles(0,0,90),LeftShoulder=angles(0,0,-90),RightElbow=CFrame.identity,LeftElbow=CFrame.identity,RightWrist=CFrame.identity,LeftWrist=CFrame.identity}
+ local below=FlightPose.BelowTarget(r.Position,pull,push,flat.Magnitude,settings or {})
+ squatBlend+=((below and 1 or 0)-squatBlend)*(1-math.exp(-10*dt))
+ local squat=FlightPose.Squat()
+ -- Aim both hands at the qualifying lower anchor, even when only one key is held.
+ if below then FlightPose.Aim(squat,joints,r.CFrame,below,below,1) end
+ for name,target in squat do pose[name]=pose[name]:Lerp(target,squatBlend) end
+ c:SetAttribute("AerialSquatBlend",squatBlend)
  local flight=FlightPose.Build(flat.Magnitude,settings or {})
  flightBlend+=(FlightPose.Weight(flat.Magnitude,settings or {})-flightBlend)*(1-math.exp(-10*dt))
  for name,target in flight do pose[name]=pose[name]:Lerp(target,flightBlend) end

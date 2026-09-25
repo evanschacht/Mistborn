@@ -47,4 +47,30 @@ function Pose.Aim(pose,joints,rootFrame,pull,push,weight)
   end
  end
 end
+-- Choose the active anchor closest to straight down inside a 20-degree cone.
+function Pose.BelowTarget(position,pull,push,speed,settings)
+ if Pose.Weight(speed,settings)>0 then return nil end
+ local best,bestDot=nil,math.cos(math.rad(20))
+ for _,target in pairs({pull,push}) do
+  if target and target.Parent then
+   local delta=target.Position-position
+   if delta.Magnitude>0.001 then
+    local dot=delta.Unit:Dot(-Vector3.yAxis)
+    if dot>=bestDot then best,bestDot=target,dot end
+   end
+  end
+ end
+ return best
+end
+function Pose.Squat()
+ return {
+ Root=angles(-12,0,0),Waist=angles(-18,0,0),Neck=angles(15,0,0),
+ RightHip=angles(85,0,12),LeftHip=angles(85,0,-12),
+ RightKnee=angles(-125,0,0),LeftKnee=angles(-125,0,0),
+ RightAnkle=angles(30,0,0),LeftAnkle=angles(30,0,0),
+ RightShoulder=angles(30,0,0),LeftShoulder=angles(30,0,0),
+ RightElbow=CFrame.identity,LeftElbow=CFrame.identity,
+ RightWrist=CFrame.identity,LeftWrist=CFrame.identity,
+ }
+end
 return Pose
