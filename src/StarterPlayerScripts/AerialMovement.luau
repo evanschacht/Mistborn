@@ -103,7 +103,7 @@ function Air.Step(dt,settings,metalMoving,pull,push)
  if below then
   -- A nearby reach point brings the hands together between the spread knees.
   -- Keep the reach aligned with the anchor instead of parallel arms at shoulder width.
-  local reach={Parent=below.Parent,Position=r.Position+(below.Position-r.Position).Unit*3+r.CFrame.LookVector*0.5}
+  local reach={Parent=below.Parent,Position=r.Position+(below.Position-r.Position).Unit*1.8+r.CFrame.LookVector*0.8}
   FlightPose.Aim(squat,joints,r.CFrame,reach,reach,1)
  end
  for name,target in squat do pose[name]=pose[name]:Lerp(target,squatBlend) end
