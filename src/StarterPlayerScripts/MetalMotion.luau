@@ -6,6 +6,7 @@ local Config=require(game:GetService("ReplicatedStorage"):WaitForChild("MetalTun
 local SlideControl=require(script.Parent:WaitForChild("MetalSlideControl"))
 local Air=require(script.Parent:WaitForChild("AerialMovement"))
 local SlidePose=require(script.Parent:WaitForChild("MetalSlidePose"))
+local CoinPose=require(script.Parent:WaitForChild("CoinTossPose"))
 function Motion.IsInRange(part,position)
  if not part or not part:IsA("BasePart") or part.Parent~=workspace:FindFirstChild("MetalAnchors") then return false end
  local distance=(part.Position-position).Magnitude
@@ -135,6 +136,7 @@ function Motion.Cancel()
  report()
 end
 function Motion.Start(part,directionSign)
+ if part and part:GetAttribute("CanMetalMove")==false then return false end
  if not part or not part:IsA("BasePart") or part.Parent~=workspace:FindFirstChild("MetalAnchors") then return false end
  local character=player.Character
  local newRoot=character and character:FindFirstChild("HumanoidRootPart")
@@ -190,7 +192,7 @@ function Motion.Resultant(position,pullPosition,pushPosition)
  end
  return result
 end
-RunService.PreSimulation:Connect(function(dt)
+local function stepMotion(dt)
  Air.Step(dt,Motion.Settings,moving,targets[1],targets[-1])
  if not moving then return end
  if not root or not root.Parent or not humanoid or humanoid.Health<=0 then Motion.Cancel() return end
@@ -258,6 +260,10 @@ RunService.PreSimulation:Connect(function(dt)
 
  if not active and ((grounded and horizontal.Magnitude<=0.001) or (not grounded and horizontal.Magnitude<1)) then Motion.Cancel() end
 
+end
+RunService.PreSimulation:Connect(function(dt)
+ stepMotion(dt)
+ CoinPose.Step()
 end)
 RunService:BindToRenderStep("MetalGroundSlide",Enum.RenderPriority.Input.Value+1,function()
  if moving and humanoid and humanoid.Parent and humanoid.FloorMaterial~=Enum.Material.Air then
