@@ -7,11 +7,11 @@ function Control.Read()
  local function down(key) return Input:IsKeyDown(key) and 1 or 0 end
  return Vector2.new(down(Enum.KeyCode.D)-down(Enum.KeyCode.A),down(Enum.KeyCode.W)-down(Enum.KeyCode.S))
 end
-function Control.Step(velocity,input,settings,dt)
+function Control.Step(velocity,input,settings,dt,powered)
  local speed=velocity.Magnitude
  if speed<0.001 then return Vector3.zero end
  local direction=velocity/speed
- if input.Y>0 then
+ if input.Y>0 and powered then
   speed+=math.min(settings.SlideWAcceleration*input.Y*dt,math.max(0,settings.SlideWTopSpeed-speed))
  elseif input.Y<0 then
   local floor=math.min(speed,settings.SlideSMinSpeed or 0)

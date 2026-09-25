@@ -79,3 +79,5 @@ Ground slide controls work during powered Q/E movement and coasting. W adds mode
 Metal Tuning sliders are organized into Ground movement, Aerial movement, Sliding, Push & pull, and Metal sensing. Each category starts closed and expands independently. Save, Reset All and the speedometer toggle remain outside the category list. Individual slider controls and tuning values are unchanged.
 
 Slide S minimum speed (Sliding category, initially 30 studs/s) sets the braking floor. S never accelerates a slower slide up to it. While S is held, its braking replaces coast friction/cutoff so those cannot defeat the floor; releasing S resumes ordinary coast friction. Collisions can still reduce speed. Set zero for stopping behavior.
+
+W slide correction: extra acceleration is available only with an active push/pull target. During released coasting, W halves configured slide friction and adds no speed; the ordinary stop cutoff still applies. W lean remains active. Current tuning captured, including air drag 0.5.

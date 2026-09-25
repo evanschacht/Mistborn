@@ -5,8 +5,8 @@ local config=require(game.ReplicatedStorage.MetalTuningConfig)
 local settings=table.clone(m.Snapshot(true).values)
 settings.SlideSMinSpeed=0
 local v=Vector3.new(0,0,-100)
-assert(math.abs(c.Step(v,Vector2.new(0,1),settings,1).Magnitude-125)<.01)
-assert(c.Step(Vector3.new(0,0,-250),Vector2.new(0,1),settings,1).Magnitude==250)
+assert(math.abs(c.Step(v,Vector2.new(0,1),settings,1,true).Magnitude-125)<.01)
+assert(c.Step(Vector3.new(0,0,-250),Vector2.new(0,1),settings,1,true).Magnitude==250)
 assert(c.Step(v,Vector2.new(0,-1),settings,2)==Vector3.zero)
 assert(c.Step(v,Vector2.new(-1,0),settings,.1).X<0)
 assert(c.Step(v,Vector2.new(1,0),settings,.1).X>0)
@@ -28,7 +28,7 @@ m.Stop() c.Read=function() return Vector2.new(0,1) end
 local start=Vector3.new(r.AssemblyLinearVelocity.X,0,r.AssemblyLinearVelocity.Z).Magnitude
 task.wait(.4)
 local boosted=Vector3.new(r.AssemblyLinearVelocity.X,0,r.AssemblyLinearVelocity.Z).Magnitude
-assert(boosted>start+2,"W coasting boost did not increase speed")
+assert(boosted<start,"W coasting must still lose speed")
 c.Read=function() return Vector2.new(1,0) end task.wait(.25)
 assert(p.Character:GetAttribute("SlideSideLean")>.5)
 local floor=m.Settings.SlideSMinSpeed m.SetSetting("SlideSMinSpeed",0)
@@ -36,4 +36,4 @@ c.Read=function() return Vector2.new(0,-1) end task.wait(3)
 m.SetSetting("SlideSMinSpeed",floor)
 assert(Vector3.new(r.AssemblyLinearVelocity.X,0,r.AssemblyLinearVelocity.Z).Magnitude<2,"S did not stop coast")
 m.Cancel() c.Read=originalRead anchor:Destroy() r.CFrame=origin r.AssemblyLinearVelocity=Vector3.zero
-workspace:SetAttribute("SlideControlTest","PASS: boost "..string.format("%.1f -> %.1f",start,boosted)..", steering lean, braking stop, curves, caps, UI and migration")
+workspace:SetAttribute("SlideControlTest","PASS: coast "..string.format("%.1f -> %.1f",start,boosted)..", steering lean, braking stop, curves, caps, UI and migration")

@@ -1,6 +1,6 @@
 local Config={}
 Config.Specs={
- {key="SlideWAcceleration",title="Slide W acceleration",min=0,max=200,step=1,default=25,unit=" studs/s^2",hint="Extra forward acceleration while sliding."},
+ {key="SlideWAcceleration",title="Slide W acceleration",min=0,max=200,step=1,default=25,unit=" studs/s^2",hint="Extra W acceleration while pushing/pulling. Coasting W only halves slide friction."},
  {key="SlideWTopSpeed",title="Slide W top speed",min=0,max=500,step=5,default=200,unit=" studs/s",hint="W boost limit; does not slow faster inherited momentum."},
  {key="SlideSMinSpeed",title="Slide S minimum speed",min=0,max=200,step=1,default=30,unit=" studs/s",hint="S brakes down to this speed; never accelerates you up to it. 0 allows stopping."},
  {key="SlideBraking",title="Slide S braking",min=0,max=1000,step=5,default=120,unit=" studs/s^2",hint="How quickly S slows you toward its minimum speed."},
