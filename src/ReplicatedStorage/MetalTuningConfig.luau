@@ -1,5 +1,9 @@
 local Config={}
 Config.Specs={
+ {key="AirPoseThreshold",title="Flight pose start speed",min=0,max=300,step=1,default=30,unit=" studs/s",hint="Horizontal speed above which the flight pose blends in."},
+ {key="AirPoseStartLean",title="Flight pose starting lean",min=0,max=80,step=1,default=30,unit=" degrees",hint="Forward lean at the flight pose threshold."},
+ {key="AirPoseMaxLean",title="Flight pose maximum lean",min=0,max=80,step=1,default=60,unit=" degrees",hint="Maximum forward lean; never less than starting lean. Hard safety limit 80 degrees."},
+ {key="AirPoseFullSpeed",title="Flight pose full lean speed",min=0,max=500,step=1,default=150,unit=" studs/s",hint="Horizontal speed reaching maximum lean; must exceed start speed."},
  {key="SlideWAcceleration",title="Slide W acceleration",min=0,max=200,step=1,default=25,unit=" studs/s^2",hint="Extra W acceleration while pushing/pulling. Coasting W only halves slide friction."},
  {key="SlideWTopSpeed",title="Slide W top speed",min=0,max=500,step=5,default=200,unit=" studs/s",hint="W boost limit; does not slow faster inherited momentum."},
  {key="SlideSMinSpeed",title="Slide S minimum speed",min=0,max=200,step=1,default=30,unit=" studs/s",hint="S brakes down to this speed; never accelerates you up to it. 0 allows stopping."},
@@ -48,7 +52,7 @@ function Config.Validate(data)
    v=data.values.ForceFalloff or spec.default r=data.ranges.ForceFalloff or {spec.min,spec.max}
   end
   -- Migrate older master saves without discarding their existing tuning.
-  if v==nil and r==nil and (spec.key=="ForceFalloff" or spec.key=="ForceNearClamp" or spec.key=="ForceFarClamp" or spec.key=="GroundSpeed" or spec.key=="GroundAcceleration" or spec.key=="AirSpeed" or spec.key=="AirAcceleration" or spec.key=="Gravity" or spec.key=="AirDrag" or spec.key=="JumpStrength" or spec.key=="SlideWAcceleration" or spec.key=="SlideWTopSpeed" or spec.key=="SlideSMinSpeed" or spec.key=="SlideBraking" or spec.key=="SlideLeftSteering" or spec.key=="SlideRightSteering") then
+  if v==nil and r==nil and (string.sub(spec.key,1,7)=="AirPose" or spec.key=="ForceFalloff" or spec.key=="ForceNearClamp" or spec.key=="ForceFarClamp" or spec.key=="GroundSpeed" or spec.key=="GroundAcceleration" or spec.key=="AirSpeed" or spec.key=="AirAcceleration" or spec.key=="Gravity" or spec.key=="AirDrag" or spec.key=="JumpStrength" or spec.key=="SlideWAcceleration" or spec.key=="SlideWTopSpeed" or spec.key=="SlideSMinSpeed" or spec.key=="SlideBraking" or spec.key=="SlideLeftSteering" or spec.key=="SlideRightSteering") then
    v=spec.default r={spec.min,spec.max}
   end
   if typeof(r)~="table" then return nil end

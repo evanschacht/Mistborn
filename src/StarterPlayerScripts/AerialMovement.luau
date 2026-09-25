@@ -15,6 +15,8 @@ function controls:GetMoveVector()
  end
  return v.Magnitude>1 and v.Unit or v
 end
+local FlightPose=require(script.Parent:WaitForChild("AerialFlightPose"))
+local flightBlend=0
 local Air={Speed=64,Acceleration=240,Drag=0.15}
 local character,humanoid,root
 local joints,saved={},{}
@@ -32,7 +34,8 @@ end
 function Air.Reset()
  restorePose()
  if active and humanoid and humanoid.Parent then humanoid.WalkSpeed=groundWalkSpeed humanoid.AutoRotate=true end
- active=false blend=0 command=Vector3.zero
+ active=false blend=0 flightBlend=0 command=Vector3.zero
+ if character then character:SetAttribute("AerialFlightBlend",0) end
 end
 function Air.Horizontal(velocity,input,dt)
  if input.Magnitude>0.01 then
@@ -42,7 +45,7 @@ function Air.Horizontal(velocity,input,dt)
  end
  return velocity*math.exp(-Air.Drag*dt)
 end
-function Air.Step(dt,settings,metalMoving)
+function Air.Step(dt,settings,metalMoving,pull,push)
  if settings then
   groundWalkSpeed=settings.GroundSpeed
   Air.Speed=settings.AirSpeed Air.Acceleration=settings.AirAcceleration
@@ -87,11 +90,17 @@ function Air.Step(dt,settings,metalMoving)
  h:Move(flat.Magnitude>0.01 and flat.Unit or Vector3.zero,false)
 
  blend=math.min(1,blend+dt*9)
- local lean=math.min(flat.Magnitude/Air.Speed,1)
+ local lean=math.min(flat.Magnitude/math.max(Air.Speed,0.001),1)
  local pose={Root=angles(-8*lean,0,0),Waist=angles(-6,0,0),Neck=angles(8,0,0),
  RightHip=angles(48,0,8),LeftHip=angles(38,0,-8),RightKnee=angles(-72,0,0),LeftKnee=angles(-62,0,0),
  RightAnkle=angles(15,0,0),LeftAnkle=angles(15,0,0),
  RightShoulder=angles(0,0,90),LeftShoulder=angles(0,0,-90),RightElbow=CFrame.identity,LeftElbow=CFrame.identity,RightWrist=CFrame.identity,LeftWrist=CFrame.identity}
+ local flight=FlightPose.Build(flat.Magnitude,settings or {})
+ flightBlend+=(FlightPose.Weight(flat.Magnitude,settings or {})-flightBlend)*(1-math.exp(-10*dt))
+ for name,target in flight do pose[name]=pose[name]:Lerp(target,flightBlend) end
+ FlightPose.Aim(pose,joints,r.CFrame,pull,push,flightBlend)
+ c:SetAttribute("AerialFlightBlend",flightBlend)
+ c:SetAttribute("AerialFlightLean",FlightPose.Lean(flat.Magnitude,settings or {}))
  pose.RootJoint=pose.Root
  pose["Right Hip"]=angles(25,0,8) pose["Left Hip"]=angles(20,0,-8)
  pose["Right Shoulder"]=pose.RightShoulder pose["Left Shoulder"]=pose.LeftShoulder

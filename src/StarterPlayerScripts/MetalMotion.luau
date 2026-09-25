@@ -191,7 +191,7 @@ function Motion.Resultant(position,pullPosition,pushPosition)
  return result
 end
 RunService.PreSimulation:Connect(function(dt)
- Air.Step(dt,Motion.Settings,moving)
+ Air.Step(dt,Motion.Settings,moving,targets[1],targets[-1])
  if not moving then return end
  if not root or not root.Parent or not humanoid or humanoid.Health<=0 then Motion.Cancel() return end
  for directionSign,part in pairs(targets) do
