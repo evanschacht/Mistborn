@@ -230,15 +230,15 @@ RunService.PreSimulation:Connect(function(dt)
   -- Integrate the commanded speed rather than accumulating Humanoid friction losses.
   -- A substantial collision/deflection resets the command to actual motion.
   if groundCommand and (groundCommand-horizontal).Magnitude>math.max(8,groundCommand.Magnitude*0.5) then groundCommand=nil end
-  local startVelocity=active and groundCommand or horizontal
-  local groundVelocity=Motion.StepGround(startVelocity or horizontal,Vector3.new(acceleration.X,0,acceleration.Z),dt,active,topSpeed,slideInput.Y>0 and 0 or Motion.Settings.CoastDrag,slideInput.Y>0 and 0 or Motion.Settings.StopSpeed)
+  local startVelocity=(active or slideInput.Y<0) and groundCommand or horizontal
+  local groundVelocity=Motion.StepGround(startVelocity or horizontal,Vector3.new(acceleration.X,0,acceleration.Z),dt,active,topSpeed,slideInput.Y~=0 and 0 or Motion.Settings.CoastDrag,slideInput.Y~=0 and 0 or Motion.Settings.StopSpeed)
   if slideInput.Y<0 then
    -- Braking wins over additional ground thrust, without reversing momentum.
    local speed=math.min(groundVelocity.Magnitude,(startVelocity or horizontal).Magnitude)
    groundVelocity=groundVelocity.Magnitude>0.001 and groundVelocity.Unit*speed or Vector3.zero
   end
   groundVelocity=SlideControl.Step(groundVelocity,slideInput,Motion.Settings,dt)
-  groundCommand=active and groundVelocity or nil
+  groundCommand=(active or slideInput.Y<0) and groundVelocity or nil
   -- Own only ground horizontal velocity; retain gravity, jumps and collision response.
   root.AssemblyLinearVelocity=Vector3.new(groundVelocity.X,current.Y,groundVelocity.Z)
   acceleration=Vector3.new(0,acceleration.Y,0)

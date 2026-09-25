@@ -14,7 +14,8 @@ function Control.Step(velocity,input,settings,dt)
  if input.Y>0 then
   speed+=math.min(settings.SlideWAcceleration*input.Y*dt,math.max(0,settings.SlideWTopSpeed-speed))
  elseif input.Y<0 then
-  speed=math.max(0,speed-settings.SlideBraking*(-input.Y)*dt)
+  local floor=math.min(speed,settings.SlideSMinSpeed or 0)
+  speed=math.max(floor,speed-settings.SlideBraking*(-input.Y)*dt)
  end
  local rate=input.X<0 and settings.SlideLeftSteering or settings.SlideRightSteering
  local angle=-math.rad(rate)*input.X*dt

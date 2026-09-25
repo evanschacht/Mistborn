@@ -67,7 +67,7 @@ local updates={}
 local groups={
  {name="GroundMovement",title="Ground movement",keys={"GroundSpeed","GroundAcceleration"}},
  {name="AerialMovement",title="Aerial movement",keys={"AirSpeed","AirAcceleration","AirDrag","JumpStrength","Gravity"}},
- {name="Sliding",title="Sliding",keys={"SlideWAcceleration","SlideWTopSpeed","SlideBraking","SlideLeftSteering","SlideRightSteering","CoastDrag","StopSpeed"}},
+ {name="Sliding",title="Sliding",keys={"SlideWAcceleration","SlideWTopSpeed","SlideBraking","SlideSMinSpeed","SlideLeftSteering","SlideRightSteering","CoastDrag","StopSpeed"}},
  {name="PushPull",title="Push & pull",keys={"PullAcceleration","PushAcceleration","PullSpeed","PushSpeed","PullFalloff","PushFalloff","ForceNearClamp","ForceFarClamp"}},
  {name="MetalSensing",title="Metal sensing",keys={"AnchorRange"}},
 }
