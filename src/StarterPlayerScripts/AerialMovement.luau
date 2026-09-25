@@ -100,7 +100,12 @@ function Air.Step(dt,settings,metalMoving,pull,push)
  squatBlend+=((below and 1 or 0)-squatBlend)*(1-math.exp(-10*dt))
  local squat=FlightPose.Squat()
  -- Aim both hands at the qualifying lower anchor, even when only one key is held.
- if below then FlightPose.Aim(squat,joints,r.CFrame,below,below,1) end
+ if below then
+  -- A nearby reach point brings the hands together between the spread knees.
+  -- Keep the reach aligned with the anchor instead of parallel arms at shoulder width.
+  local reach={Parent=below.Parent,Position=r.Position+(below.Position-r.Position).Unit*3+r.CFrame.LookVector*0.5}
+  FlightPose.Aim(squat,joints,r.CFrame,reach,reach,1)
+ end
  for name,target in squat do pose[name]=pose[name]:Lerp(target,squatBlend) end
  c:SetAttribute("AerialSquatBlend",squatBlend)
  local flight=FlightPose.Build(flat.Magnitude,settings or {})

@@ -65,7 +65,7 @@ end
 function Pose.Squat()
  return {
  Root=angles(-12,0,0),Waist=angles(-18,0,0),Neck=angles(15,0,0),
- RightHip=angles(85,0,12),LeftHip=angles(85,0,-12),
+ RightHip=angles(0,-50,18)*angles(80,0,0),LeftHip=angles(0,50,-18)*angles(80,0,0),
  RightKnee=angles(-125,0,0),LeftKnee=angles(-125,0,0),
  RightAnkle=angles(30,0,0),LeftAnkle=angles(30,0,0),
  RightShoulder=angles(30,0,0),LeftShoulder=angles(30,0,0),
