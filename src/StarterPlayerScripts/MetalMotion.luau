@@ -100,6 +100,12 @@ function Motion.StepGround(velocity,acceleration,dt,powered,cap,friction,cutoff)
 end
 
 local targets={}
+local coinRemote=game.ReplicatedStorage:WaitForChild("CoinToss")
+local coinUpdate=0
+local function releaseCoin(sign)
+ local part=targets[sign]
+ if part and part:GetAttribute("IsCoin") then coinRemote:FireServer("Control",{coin=part,sign=sign}) end
+end
 function Motion.GetTarget(directionSign)
  return targets[directionSign]
 end
@@ -122,6 +128,7 @@ local function report()
  end
 end
 function Motion.Cancel()
+ releaseCoin(1) releaseCoin(-1)
  groundCommand=nil
  SlidePose.Clear()
  active=false
@@ -164,7 +171,9 @@ function Motion.Start(part,directionSign)
   actuator.Parent=root
  end
 
+ releaseCoin(directionSign==1 and 1 or -1)
  targets[directionSign==1 and 1 or -1]=part
+ coinUpdate=0
  active=true
  moving=true
  local velocity=root.AssemblyLinearVelocity
@@ -177,6 +186,7 @@ function Motion.Start(part,directionSign)
 end
 function Motion.Stop(directionSign)
  if not moving then return end
+ if directionSign then releaseCoin(directionSign) else releaseCoin(1) releaseCoin(-1) end
  if directionSign then targets[directionSign]=nil else table.clear(targets) end
  active=next(targets)~=nil
 
@@ -207,7 +217,15 @@ local function stepMotion(dt)
  local grounded=humanoid.FloorMaterial~=Enum.Material.Air
  local slideInput=grounded and SlideControl.Read() or Vector2.zero
  local topSpeed=0
+ local powered=false
+ coinUpdate-=dt
  for directionSign,part in pairs(targets) do
+  if part:GetAttribute("IsCoin") then
+   if coinUpdate<=0 then coinRemote:FireServer("Control",{coin=part,sign=directionSign,settings=Motion.Snapshot()}) end
+   local reaction=part:GetAttribute(directionSign==1 and "CoinPullReaction" or "CoinPushReaction")
+   if reaction~=player.UserId then continue end
+  end
+  powered=true
   local delta=part.Position-root.Position
   if delta.Magnitude>0.1 then
    local direction=ForceGeometry.Direction(part.CFrame,part.Size,root.CFrame,root.Size,directionSign)
@@ -221,6 +239,7 @@ local function stepMotion(dt)
    acceleration+=direction*thrust
   end
  end
+ if coinUpdate<=0 then coinUpdate=.15 end
  -- Release the Humanoid's floor constraint when actual upward thrust beats
  -- gravity. Freefall adds no jump impulse; VectorForce performs the lift.
  if grounded and acceleration.Y>workspace.Gravity then
@@ -235,15 +254,15 @@ local function stepMotion(dt)
   -- Integrate the commanded speed rather than accumulating Humanoid friction losses.
   -- A substantial collision/deflection resets the command to actual motion.
   if groundCommand and (groundCommand-horizontal).Magnitude>math.max(8,groundCommand.Magnitude*0.5) then groundCommand=nil end
-  local startVelocity=(active or slideInput.Y<0) and groundCommand or horizontal
-  local groundVelocity=Motion.StepGround(startVelocity or horizontal,Vector3.new(acceleration.X,0,acceleration.Z),dt,active,topSpeed,slideInput.Y<0 and 0 or Motion.Settings.CoastDrag*(slideInput.Y>0 and 0.5 or 1),slideInput.Y<0 and 0 or Motion.Settings.StopSpeed)
+  local startVelocity=(powered or slideInput.Y<0) and groundCommand or horizontal
+  local groundVelocity=Motion.StepGround(startVelocity or horizontal,Vector3.new(acceleration.X,0,acceleration.Z),dt,powered,topSpeed,slideInput.Y<0 and 0 or Motion.Settings.CoastDrag*(slideInput.Y>0 and 0.5 or 1),slideInput.Y<0 and 0 or Motion.Settings.StopSpeed)
   if slideInput.Y<0 then
    -- Braking wins over additional ground thrust, without reversing momentum.
    local speed=math.min(groundVelocity.Magnitude,(startVelocity or horizontal).Magnitude)
    groundVelocity=groundVelocity.Magnitude>0.001 and groundVelocity.Unit*speed or Vector3.zero
   end
-  groundVelocity=SlideControl.Step(groundVelocity,slideInput,Motion.Settings,dt,active)
-  groundCommand=(active or slideInput.Y<0) and groundVelocity or nil
+  groundVelocity=SlideControl.Step(groundVelocity,slideInput,Motion.Settings,dt,powered)
+  groundCommand=(powered or slideInput.Y<0) and groundVelocity or nil
   -- Own only ground horizontal velocity; retain gravity, jumps and collision response.
   root.AssemblyLinearVelocity=Vector3.new(groundVelocity.X,current.Y,groundVelocity.Z)
   acceleration=Vector3.new(0,acceleration.Y,0)

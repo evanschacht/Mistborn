@@ -5,6 +5,7 @@ local Rules=require(RS:WaitForChild("CoinRules"))
 local Config=require(RS:WaitForChild("MetalTuningConfig"))
 local Asset=require(RS:WaitForChild("CoinPouchAsset"))
 local preset=require(RS:WaitForChild("MetalTuningPreset"))
+local CoinPhysics=require(script.Parent:WaitForChild("CoinPhysics"))
 local remote=Instance.new("RemoteEvent") remote.Name="CoinToss" remote.Parent=RS
 local anchors=workspace:WaitForChild("MetalAnchors")
 local ranges,coins={},{}
@@ -52,6 +53,12 @@ Players.PlayerAdded:Connect(setup)
 for _,p in Players:GetPlayers() do setup(p) end
 Players.PlayerRemoving:Connect(function(p) cleanup(p) ranges[p]=nil end)
 remote.OnServerEvent:Connect(function(player,action,value)
+ if action=="Control" and typeof(value)=="table" then
+  if typeof(value.coin)~="Instance" or not coins[value.coin] then return end
+  local clean=value.settings and Config.Validate(value.settings)
+  CoinPhysics.Control(player,value.coin,value.sign,clean and clean.values)
+  return
+ end
  if action=="Range" then
   if typeof(value)=="number" and value==value and value>=0 and value<=10000 then ranges[player]=value end
   return
@@ -74,7 +81,7 @@ remote.OnServerEvent:Connect(function(player,action,value)
   local coin=Instance.new("Part") coin.Name="Coin_"..player.UserId.."_"..tostring(math.floor(now*1000))
   coin.Shape=Enum.PartType.Cylinder coin.Size=Rules.Size coin.Color=Color3.fromRGB(198,152,54) coin.Material=Enum.Material.Metal
   coin.CustomPhysicalProperties=PhysicalProperties.new(7.8,.65,0,100,100)
-  coin:SetAttribute("IsCoin",true) coin:SetAttribute("CanMetalMove",false) coin:SetAttribute("CoinOwner",player.UserId)
+  coin:SetAttribute("IsCoin",true) coin:SetAttribute("CanMetalMove",true) coin:SetAttribute("CoinOwner",player.UserId)
   local dropPosition=root.Position-Vector3.yAxis
   coin.CFrame=CFrame.new(dropPosition)*CFrame.Angles(0,0,math.pi/2)
   coin.Parent=anchors
@@ -92,11 +99,13 @@ remote.OnServerEvent:Connect(function(player,action,value)
   coin.AssemblyLinearVelocity=Vector3.new(0,-2*Rules.FallSpeedScale,0)
   coin.AssemblyAngularVelocity=Vector3.zero
   coins[coin]=player
+  CoinPhysics.Register(coin)
   remote:FireClient(player,"Release",coin.Name)
  end)
 end)
 local elapsed=0
 RunService.Heartbeat:Connect(function(dt)
+ CoinPhysics.Step(dt)
  elapsed+=dt if elapsed<.1 then return end elapsed=0
  for coin,owner in coins do
   local root=owner.Character and owner.Character:FindFirstChild("HumanoidRootPart")
