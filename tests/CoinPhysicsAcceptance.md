@@ -1,5 +1,9 @@
 # Coin push/pull acceptance
 
+Final client regression: 67 airborne samples without player thrust, followed by a client-side contact ray proving the visible coin was on the solid surface. Replicated CoinContactCFrame explicitly synchronizes the final landing position when anchoring, avoiding a stale airborne physics position on clients.
+
+Contact regression verified 2026-09-25: moving aerial drop with held push ran 74 airborne samples with no anchored coin and zero player thrust, then contacted a solid surface. A separate fixture verified that a coin with a gap remains airborne, actual contact enables reaction, and moving an anchored coin off its support clears both anchoring and reaction. Release alignment is now acknowledged before server contact detection; support is rechecked every frame. Contact probes use coin dimensions plus 0.025 studs, not a fixed forward lookahead.
+
 Verified in Studio on 2026-09-25:
 
 - A grounded coin locks in place and reports a push reaction for the acting player.

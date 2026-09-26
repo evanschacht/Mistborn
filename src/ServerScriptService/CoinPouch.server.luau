@@ -53,6 +53,14 @@ Players.PlayerAdded:Connect(setup)
 for _,p in Players:GetPlayers() do setup(p) end
 Players.PlayerRemoving:Connect(function(p) cleanup(p) ranges[p]=nil end)
 remote.OnServerEvent:Connect(function(player,action,value)
+ if action=="ReleaseReady" and typeof(value)=="table" then
+  local coin,position=value.coin,value.position
+  local root=player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+  if typeof(coin)=="Instance" and coins[coin]==player and root and typeof(position)=="Vector3" and (position-root.Position).Magnitude<=32 then
+   CoinPhysics.ReleaseReady(coin,position)
+  end
+  return
+ end
  if action=="Control" and typeof(value)=="table" then
   if typeof(value.coin)~="Instance" or not coins[value.coin] then return end
   local clean=value.settings and Config.Validate(value.settings)

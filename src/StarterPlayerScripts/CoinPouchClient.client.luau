@@ -7,6 +7,19 @@ local Rules=require(RS:WaitForChild("CoinRules"))
 local remote=RS:WaitForChild("CoinToss")
 local motionScript=script.Parent:WaitForChild("MetalMotion")
 local pendingUntil=0
+local anchors=workspace:WaitForChild("MetalAnchors")
+local function watchContact(coin)
+ if not coin:IsA("BasePart") then return end
+ local function sync()
+  local contact=coin:GetAttribute("CoinContactCFrame")
+  if coin.Anchored and typeof(contact)=="CFrame" then coin.CFrame=contact end
+ end
+ coin:GetAttributeChangedSignal("CoinContactCFrame"):Connect(sync)
+ coin:GetPropertyChangedSignal("Anchored"):Connect(sync)
+ sync()
+end
+anchors.ChildAdded:Connect(watchContact)
+for _,coin in anchors:GetChildren() do watchContact(coin) end
 remote.OnClientEvent:Connect(function(action,coinName)
  if action~="Release" or typeof(coinName)~="string" then return end
  local coin=workspace:WaitForChild("MetalAnchors"):WaitForChild(coinName,2)
@@ -19,6 +32,7 @@ remote.OnClientEvent:Connect(function(action,coinName)
  coin.CFrame=CFrame.new(root.Position-Vector3.yAxis)*CFrame.Angles(0,0,math.pi/2)
  coin.AssemblyLinearVelocity=Vector3.new(0,-2*Rules.FallSpeedScale,0)
  coin.AssemblyAngularVelocity=Vector3.zero
+ remote:FireServer("ReleaseReady",{coin=coin,position=coin.Position})
  local force=coin:FindFirstChild("CoinGravity")
  if force then force.Force=Vector3.new(0,-coin.AssemblyMass*workspace.Gravity*(Rules.FallSpeedScale^2-1),0) end
 end)

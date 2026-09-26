@@ -223,7 +223,9 @@ local function stepMotion(dt)
   if part:GetAttribute("IsCoin") then
    if coinUpdate<=0 then coinRemote:FireServer("Control",{coin=part,sign=directionSign,settings=Motion.Snapshot()}) end
    local reaction=part:GetAttribute(directionSign==1 and "CoinPullReaction" or "CoinPushReaction")
-   if reaction~=player.UserId then continue end
+   local contactState=part:GetAttribute("CoinState")
+   local expectedState=directionSign==1 and "Blocked" or "Grounded"
+   if reaction~=player.UserId or not part.Anchored or contactState~=expectedState then continue end
   end
   powered=true
   local delta=part.Position-root.Position

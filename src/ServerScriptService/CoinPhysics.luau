@@ -4,8 +4,27 @@ local Rules=require(game.ReplicatedStorage.CoinRules)
 local Physics={}
 local states={}
 function Physics.Register(coin)
- states[coin]={controls={},ready=os.clock()+.2,grounded=false}
+ states[coin]={controls={},ready=os.clock()+2,grounded=false,released=false}
  coin:SetAttribute("CoinState","Falling")
+end
+function Physics.ReleaseReady(coin,position)
+ local state=states[coin]
+ if not state or state.released then return end
+ state.released=true state.ready=0 state.grounded=false state.supportNormal=nil
+ coin.Anchored=false
+ coin:SetAttribute("CoinContactCFrame",nil)
+ coin.CFrame=CFrame.new(position)*CFrame.Angles(0,0,math.pi/2)
+ coin.AssemblyLinearVelocity=Vector3.new(0,-2*Rules.FallSpeedScale,0)
+ coin.AssemblyAngularVelocity=Vector3.zero
+ coin:SetNetworkOwner(nil)
+end
+local function extent(coin,direction)
+ local d=coin.CFrame:VectorToObjectSpace(direction)
+ local half=coin.Size*.5
+ return math.abs(d.X)*half.X+math.abs(d.Y)*half.Y+math.abs(d.Z)*half.Z
+end
+local function contact(coin,direction,params)
+ return workspace:Raycast(coin.Position,direction*(extent(coin,direction)+.025),params)
 end
 function Physics.Control(player,coin,sign,settings)
  local state=states[coin]
@@ -31,7 +50,10 @@ function Physics.Step(dt)
  local params=queryParams()
  for coin,state in states do
   if not coin.Parent then states[coin]=nil continue end
-  if os.clock()<state.ready then continue end
+  if not state.released then
+   if os.clock()<state.ready then continue end
+   Physics.ReleaseReady(coin,coin.Position)
+  end
   for sign,control in state.controls do
    local c=control.player.Character
    local root=c and c:FindFirstChild("HumanoidRootPart")
@@ -60,8 +82,7 @@ function Physics.Step(dt)
    local delta=pull.root.Position-coin.Position
    local direction=delta.Magnitude>.001 and delta.Unit or Vector3.yAxis
    -- Check actual contact ahead, not a distant obstacle along the whole path.
-   local lookAhead=math.max(.45,math.max(0,coin.AssemblyLinearVelocity:Dot(direction))*math.min(dt,.05)+.3)
-   local hit=workspace:Raycast(coin.Position,direction*lookAhead,params)
+   local hit=contact(coin,direction,params)
    local blocked=hit~=nil
    if delta.Magnitude<=3.5 and not workspace:Raycast(coin.Position,delta,params) then
     local c=pull.player.Character
@@ -69,26 +90,41 @@ function Physics.Step(dt)
     coin:Destroy() states[coin]=nil continue
    end
    if blocked then
+    coin:SetAttribute("CoinContactCFrame",coin.CFrame)
     coin.Anchored=true
     coin:SetAttribute("CoinState","Blocked")
     coin:SetAttribute("CoinPullReaction",pull.player.UserId)
     continue
    end
    coin.Anchored=false
+   coin:SetAttribute("CoinContactCFrame",nil)
    coin:SetNetworkOwner(nil)
    coin:SetAttribute("CoinState","Pulling")
   else
-   if not state.grounded and coin.AssemblyLinearVelocity.Y<=1 then
-    local floor=workspace:Raycast(coin.Position,Vector3.new(0,-.36,0),params)
-    if floor and floor.Normal.Y>.35 then state.grounded=true end
+   -- Revalidate support every frame: moving/deleted surfaces and corrected
+   -- release positions must never leave a coin anchored in empty air.
+   if state.grounded then
+    local support=state.supportNormal and contact(coin,-state.supportNormal,params)
+    if not support then state.grounded=false state.supportNormal=nil end
+   end
+   if not state.grounded then
+    local hit
+    if coin.AssemblyLinearVelocity.Y<=1 then hit=contact(coin,-Vector3.yAxis,params) end
+    if not hit and push then
+     local away=coin.Position-push.root.Position
+     if away.Magnitude>.001 then hit=contact(coin,away.Unit,params) end
+    end
+    if hit then state.grounded=true state.supportNormal=hit.Normal end
    end
    if state.grounded then
     coin.AssemblyLinearVelocity=Vector3.zero coin.AssemblyAngularVelocity=Vector3.zero
+    coin:SetAttribute("CoinContactCFrame",coin.CFrame)
     coin.Anchored=true coin:SetAttribute("CoinState","Grounded")
     if push then coin:SetAttribute("CoinPushReaction",push.player.UserId) end
     continue
    end
    coin.Anchored=false
+   coin:SetAttribute("CoinContactCFrame",nil)
    coin:SetNetworkOwner(nil)
    coin:SetAttribute("CoinState",push and "Pushed" or "Falling")
   end
