@@ -76,7 +76,12 @@ remote.OnServerEvent:Connect(function(player,action,value)
   coin.CustomPhysicalProperties=PhysicalProperties.new(7.8,.65,0,100,100)
   coin:SetAttribute("IsCoin",true) coin:SetAttribute("CanMetalMove",false) coin:SetAttribute("CoinOwner",player.UserId)
   local hand=c:FindFirstChild("RightHand") or c:FindFirstChild("Right Arm")
-  coin.CFrame=CFrame.new(hand and hand.Position or root.Position)*CFrame.Angles(0,0,math.pi/2)
+  local dropPosition=hand and hand.Position or root.Position
+  local velocity=root.AssemblyLinearVelocity
+  if Vector3.new(velocity.X,0,velocity.Z).Magnitude<1 then
+   dropPosition=Vector3.new(root.Position.X,dropPosition.Y,root.Position.Z)
+  end
+  coin.CFrame=CFrame.new(dropPosition)*CFrame.Angles(0,0,math.pi/2)
   coin.Parent=anchors
   for _,part in c:GetDescendants() do if part:IsA("BasePart") then
    local nc=Instance.new("NoCollisionConstraint") nc.Part0=coin nc.Part1=part nc.Parent=coin
