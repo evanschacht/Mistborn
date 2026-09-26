@@ -53,6 +53,11 @@ Players.PlayerAdded:Connect(setup)
 for _,p in Players:GetPlayers() do setup(p) end
 Players.PlayerRemoving:Connect(function(p) cleanup(p) ranges[p]=nil end)
 remote.OnServerEvent:Connect(function(player,action,value)
+ if action=="CoinTuning" then
+  local clean=Config.Validate(value)
+  if clean then CoinPhysics.SetTuning(player,clean.values) end
+  return
+ end
  if action=="ReleaseReady" and typeof(value)=="table" then
   local coin,position=value.coin,value.position
   local root=player.Character and player.Character:FindFirstChild("HumanoidRootPart")

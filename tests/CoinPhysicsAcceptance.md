@@ -27,3 +27,9 @@ Server control messages validate the existing tuning schema, target identity, ra
 - Falling, rising, and initially stationary drops: single server-owned launch, nonpositive vertical release speed, constant horizontal velocity and monotonically decreasing vertical velocity during unobstructed free flight.
 - Passed 31+ Heartbeat samples per case; no lateral or upward impulses.
 - Pending coin remains hidden and noncolliding until authoritative release; dropped coins cannot collide with one another.
+
+## Coin drag and render smoothing
+- Coin Air Drag in the initially closed Coins category; defaults to 1.2, editable range 0-8, individual reset and master-save migration preserved.
+- Live airborne release tests: horizontal speed ratio after 0.5s was 1.0 at drag 0, 0.546 at drag 1.2, and 0.128 at drag 4.
+- Three client render tests, 30+ frames each, had no upward position reversals; landing mesh, halo and beam endpoints agree.
+- Rendering uses a noncolliding local proxy; physics, range, push/pull targets, and retrieval remain server-authoritative.

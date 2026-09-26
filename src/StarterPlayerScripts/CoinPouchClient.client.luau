@@ -6,6 +6,12 @@ local player=Players.LocalPlayer
 local Rules=require(RS:WaitForChild("CoinRules"))
 local remote=RS:WaitForChild("CoinToss")
 local motionScript=script.Parent:WaitForChild("MetalMotion")
+local function updateCoinTuning()
+ remote:FireServer("CoinTuning",require(motionScript).Snapshot())
+end
+motionScript:GetAttributeChangedSignal("CoinAirDrag"):Connect(updateCoinTuning)
+motionScript:GetAttributeChangedSignal("Gravity"):Connect(updateCoinTuning)
+task.defer(updateCoinTuning)
 local pendingUntil=0
 local anchors=workspace:WaitForChild("MetalAnchors")
 local function watchContact(coin)

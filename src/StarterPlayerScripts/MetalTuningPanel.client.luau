@@ -65,6 +65,7 @@ local updates={}
 
 -- Categories start closed; each expands independently inside the scrolling area.
 local groups={
+ {name="Coins",title="Coins",keys={"CoinAirDrag"}},
  {name="GroundMovement",title="Ground movement",keys={"GroundSpeed","GroundAcceleration"}},
  {name="AerialMovement",title="Aerial movement",keys={"AirSpeed","AirAcceleration","AirDrag","JumpStrength","Gravity","AirPoseThreshold","AirPoseStartLean","AirPoseMaxLean","AirPoseFullSpeed"}},
  {name="Sliding",title="Sliding",keys={"SlideWAcceleration","SlideWTopSpeed","SlideBraking","SlideSMinSpeed","SlideLeftSteering","SlideRightSteering","CoastDrag","StopSpeed"}},

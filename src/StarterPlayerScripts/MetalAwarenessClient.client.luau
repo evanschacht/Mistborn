@@ -30,10 +30,14 @@ local hovered
 local Motion=require(script.Parent:WaitForChild("MetalMotion"))
 local Config=require(game:GetService("ReplicatedStorage"):WaitForChild("MetalTuningConfig"))
 local heldKeys={}
+local function visual(part)
+ local entry=part and entries[part]
+ return entry and entry.visual or part
+end
 local function selectAnchor(part)
  if selected==part then return end
  selected=part
- highlight.Adornee=part
+ highlight.Adornee=visual(part)
  highlight.Enabled=part~=nil
  effects:SetAttribute("SelectedAnchor",part and part.Name or "")
 end
@@ -112,6 +116,7 @@ anchors.ChildAdded:Connect(addAnchor)
 anchors.ChildRemoved:Connect(function(part)
  local entry=entries[part]
  if entry then
+  if entry.visual then entry.visual:Destroy() end
   if entry.glow then entry.glow:Destroy() end
   for _,item in entry.outline do item.edge:Destroy() end
   for _,layer in entry.layers do
@@ -155,12 +160,12 @@ player.CharacterRemoving:Connect(function()
  end
 end)
 if player.Character then task.spawn(bindCharacter,player.Character) end
-RunService.RenderStepped:Connect(function()
+RunService.RenderStepped:Connect(function(dt)
  if not root or not root.Parent then return end
  local pushTarget=Motion.GetTarget(-1)
  local pullTarget=Motion.GetTarget(1)
- pushHighlight.Adornee=pushTarget
- pullHighlight.Adornee=pullTarget
+ pushHighlight.Adornee=visual(pushTarget)
+ pullHighlight.Adornee=visual(pullTarget)
  pushHighlight.Enabled=pushTarget~=nil and pushTarget~=selected and Motion.IsInRange(pushTarget,root.Position)
  pullHighlight.Enabled=pullTarget~=nil and pullTarget~=selected and pullTarget~=pushTarget and Motion.IsInRange(pullTarget,root.Position)
  if selected and not Motion.IsInRange(selected,root.Position) then selectAnchor(nil) end
@@ -169,11 +174,31 @@ RunService.RenderStepped:Connect(function()
   effects:SetAttribute("HoveredAnchor","")
  end
  for part,entry in pairs(entries) do
-  local delta=part.Position-root.Position
-  local enabled=Motion.IsInRange(part,root.Position)
+  if part:GetAttribute("IsCoin") then
+   if not entry.visual then
+    local proxy=Instance.new("Part")
+    proxy.Name="CoinVisual_"..part.Name proxy.Shape=Enum.PartType.Cylinder
+    proxy.Size=part.Size proxy.Color=part.Color proxy.Material=part.Material
+    proxy.Anchored=true proxy.CanCollide=false proxy.CanTouch=false proxy.CanQuery=false
+    proxy.CFrame=part.CFrame proxy.Parent=effects entry.visual=proxy
+    for _,item in entry.outline do item.edge.Adornee=proxy end
+    for _,layer in entry.layers do layer.endpoint.Parent=proxy end
+   end
+   local proxy=entry.visual
+   local visible=part.Transparency<1
+   -- Render-only smoothing absorbs packet cadence; physical coins stay authoritative.
+   if not entry.wasVisible or part.Anchored then proxy.CFrame=part.CFrame
+   else proxy.CFrame=proxy.CFrame:Lerp(part.CFrame,1-math.exp(-25*dt)) end
+   proxy.Transparency=visible and 0 or 1 entry.wasVisible=visible
+   part.LocalTransparencyModifier=1
+   if selected==part then highlight.Adornee=proxy end
+  end
+  local shown=visual(part)
+  local delta=shown.Position-root.Position
+  local enabled=Motion.IsInRange(part,root.Position) and (not entry.visual or entry.wasVisible)
   local active=part==selected or part==pushTarget or part==pullTarget
   local coin=part:GetAttribute("IsCoin")==true
-  if coin and not entry.glow then entry.glow=createCoinGlow(part) end
+  if coin and not entry.glow then entry.glow=createCoinGlow(shown) end
   if entry.glow then
    entry.glow.Enabled=enabled
    if entry.glowActive~=active then
@@ -218,7 +243,7 @@ RunService.RenderStepped:Connect(function()
     local up=radial*math.cos(layer.angle)+other*math.sin(layer.angle)
     local frame=CFrame.fromMatrix(root.Position,direction,up,direction:Cross(up))
     layer.origin.CFrame=root.CFrame:ToObjectSpace(frame)
-    layer.endpoint.CFrame=part.CFrame:ToObjectSpace(frame+delta)
+    layer.endpoint.CFrame=shown.CFrame:ToObjectSpace(frame+delta)
     layer.line.Width0=width
     layer.line.Width1=width
     layer.line.Color=color
@@ -244,13 +269,14 @@ RunService.RenderStepped:Connect(function()
 
  local best,bestScore
  for part in pairs(entries) do
-  local center,onScreen=camera:WorldToViewportPoint(part.Position)
-  if onScreen and center.Z>0 and Motion.IsInRange(part,root.Position) then
+  local shown=visual(part)
+  local center,onScreen=camera:WorldToViewportPoint(shown.Position)
+  if onScreen and center.Z>0 and part.Transparency<1 and Motion.IsInRange(part,root.Position) then
    local low=Vector2.new(math.huge,math.huge)
    local high=Vector2.new(-math.huge,-math.huge)
    local allInFront=true
    for x=-1,1,2 do for y=-1,1,2 do for z=-1,1,2 do
-    local corner=camera:WorldToViewportPoint(part.CFrame:PointToWorldSpace(part.Size*Vector3.new(x,y,z)*0.5))
+    local corner=camera:WorldToViewportPoint(shown.CFrame:PointToWorldSpace(part.Size*Vector3.new(x,y,z)*0.5))
     if corner.Z<=0 then allInFront=false end
     low=Vector2.new(math.min(low.X,corner.X),math.min(low.Y,corner.Y))
     high=Vector2.new(math.max(high.X,corner.X),math.max(high.Y,corner.Y))

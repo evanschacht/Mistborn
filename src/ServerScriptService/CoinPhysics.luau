@@ -3,6 +3,9 @@ local Config=require(game.ReplicatedStorage.MetalTuningConfig)
 local Rules=require(game.ReplicatedStorage.CoinRules)
 local Physics={}
 local states={}
+local tuning={}
+function Physics.SetTuning(player,settings) tuning[player.UserId]=settings end
+Players.PlayerRemoving:Connect(function(player) tuning[player.UserId]=nil end)
 function Physics.Register(coin)
  states[coin]={controls={},ready=os.clock()+2,grounded=false,released=false}
  coin:SetAttribute("CoinState","Falling")
@@ -67,7 +70,6 @@ function Physics.Step(dt)
   end
   local pull,push=state.controls[1],state.controls[-1]
   local control=pull or push
-  if not coin.Anchored then coin:SetNetworkOwner(nil) end
   local gravity=coin:FindFirstChild("CoinGravity")
   local thrust=coin:FindFirstChild("CoinThrust")
   if not thrust then
@@ -78,7 +80,8 @@ function Physics.Step(dt)
   thrust.Force=Vector3.zero
   coin:SetAttribute("CoinPushReaction",0)
   coin:SetAttribute("CoinPullReaction",0)
-  local g=control and control.settings.Gravity or require(game.ReplicatedStorage.MetalTuningPreset).values.Gravity
+  local settings=control and control.settings or tuning[coin:GetAttribute("CoinOwner")] or require(game.ReplicatedStorage.MetalTuningPreset).values
+  local g=settings.Gravity
   gravity.Force=Vector3.new(0,-coin:GetMass()*(g*Rules.FallSpeedScale^2-workspace.Gravity),0)
   if pull then
    state.grounded=false
@@ -99,9 +102,8 @@ function Physics.Step(dt)
     coin:SetAttribute("CoinPullReaction",pull.player.UserId)
     continue
    end
-   coin.Anchored=false
+   if coin.Anchored then coin.Anchored=false coin:SetNetworkOwner(nil) end
    coin:SetAttribute("CoinContactCFrame",nil)
-   coin:SetNetworkOwner(nil)
    coin:SetAttribute("CoinState","Pulling")
   else
    -- Revalidate support every frame: moving/deleted surfaces and corrected
@@ -126,12 +128,13 @@ function Physics.Step(dt)
     if push then coin:SetAttribute("CoinPushReaction",push.player.UserId) end
     continue
    end
-   coin.Anchored=false
+   if coin.Anchored then coin.Anchored=false coin:SetNetworkOwner(nil) end
    coin:SetAttribute("CoinContactCFrame",nil)
-   coin:SetNetworkOwner(nil)
    coin:SetAttribute("CoinState",push and "Pushed" or "Falling")
   end
-  local acceleration=Vector3.zero
+  local velocity=coin.AssemblyLinearVelocity
+  local drag=(1-math.exp(-(settings.CoinAirDrag or 1.2)*dt))/math.max(dt,.001)
+  local acceleration=-Vector3.new(velocity.X,0,velocity.Z)*drag
   for sign,action in state.controls do
    local delta=action.root.Position-coin.Position
    if delta.Magnitude>.01 then
