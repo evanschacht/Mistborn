@@ -1,4 +1,6 @@
 # Studio acceptance - 2026-09-24
+Update verified 2026-09-25: release shortened to 0.34 seconds with a 0.55-second animation. Moving airborne release measured 0 horizontal offset and 0 sideways drift, arriving after about 0.42 seconds in Studio. Owner-side release alignment waits for the replicated coin by name. Coin-only downward force supplies 2.25 times gravity and initial downward speed is multiplied by 1.5, yielding approximately 1.5 times faster descent. Character gravity is unchanged.
+
 Verified in a live Studio client/server session:
 - Spawn creates 61 noncolliding pouch details, 15 visible pouch coins and bottom-left counter.
 - Real R key input starts a toss; repeated R during the animation consumes exactly one coin.

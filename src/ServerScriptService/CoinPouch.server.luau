@@ -75,22 +75,24 @@ remote.OnServerEvent:Connect(function(player,action,value)
   coin.Shape=Enum.PartType.Cylinder coin.Size=Rules.Size coin.Color=Color3.fromRGB(198,152,54) coin.Material=Enum.Material.Metal
   coin.CustomPhysicalProperties=PhysicalProperties.new(7.8,.65,0,100,100)
   coin:SetAttribute("IsCoin",true) coin:SetAttribute("CanMetalMove",false) coin:SetAttribute("CoinOwner",player.UserId)
-  local hand=c:FindFirstChild("RightHand") or c:FindFirstChild("Right Arm")
-  local dropPosition=hand and hand.Position or root.Position
-  local velocity=root.AssemblyLinearVelocity
-  if Vector3.new(velocity.X,0,velocity.Z).Magnitude<1 then
-   dropPosition=Vector3.new(root.Position.X,dropPosition.Y,root.Position.Z)
-  end
+  local dropPosition=root.Position-Vector3.yAxis
   coin.CFrame=CFrame.new(dropPosition)*CFrame.Angles(0,0,math.pi/2)
   coin.Parent=anchors
   for _,part in c:GetDescendants() do if part:IsA("BasePart") then
    local nc=Instance.new("NoCollisionConstraint") nc.Part0=coin nc.Part1=part nc.Parent=coin
   end end
-  coin:SetNetworkOwner(nil)
+  local gravityAttachment=Instance.new("Attachment") gravityAttachment.Parent=coin
+  local gravityForce=Instance.new("VectorForce") gravityForce.Name="CoinGravity"
+  gravityForce.Attachment0=gravityAttachment gravityForce.RelativeTo=Enum.ActuatorRelativeTo.World
+  gravityForce.ApplyAtCenterOfMass=true
+  gravityForce.Force=Vector3.new(0,-coin.AssemblyMass*workspace.Gravity*(Rules.FallSpeedScale^2-1),0)
+  gravityForce.Parent=coin
+  coin:SetNetworkOwner(player)
   -- Drop vertically, independent of the character's flight speed or facing.
-  coin.AssemblyLinearVelocity=Vector3.new(0,-2,0)
+  coin.AssemblyLinearVelocity=Vector3.new(0,-2*Rules.FallSpeedScale,0)
   coin.AssemblyAngularVelocity=Vector3.zero
   coins[coin]=player
+  remote:FireClient(player,"Release",coin.Name)
  end)
 end)
 local elapsed=0

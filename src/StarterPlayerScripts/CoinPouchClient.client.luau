@@ -7,6 +7,21 @@ local Rules=require(RS:WaitForChild("CoinRules"))
 local remote=RS:WaitForChild("CoinToss")
 local motionScript=script.Parent:WaitForChild("MetalMotion")
 local pendingUntil=0
+remote.OnClientEvent:Connect(function(action,coinName)
+ if action~="Release" or typeof(coinName)~="string" then return end
+ local coin=workspace:WaitForChild("MetalAnchors"):WaitForChild(coinName,2)
+ if not coin or not coin:IsA("BasePart") then return end
+ local c=player.Character
+ local root=c and c:FindFirstChild("HumanoidRootPart")
+ if not root or not coin.Parent then return end
+ -- Use the current local position when the physical coin becomes visible,
+ -- rather than the older character position received by the server.
+ coin.CFrame=CFrame.new(root.Position-Vector3.yAxis)*CFrame.Angles(0,0,math.pi/2)
+ coin.AssemblyLinearVelocity=Vector3.new(0,-2*Rules.FallSpeedScale,0)
+ coin.AssemblyAngularVelocity=Vector3.zero
+ local force=coin:FindFirstChild("CoinGravity")
+ if force then force.Force=Vector3.new(0,-coin.AssemblyMass*workspace.Gravity*(Rules.FallSpeedScale^2-1),0) end
+end)
 local gui=Instance.new("ScreenGui") gui.Name="CoinCounter" gui.ResetOnSpawn=false gui.Parent=player:WaitForChild("PlayerGui")
 local label=Instance.new("TextLabel") label.Name="Coins" label.AnchorPoint=Vector2.new(0,1)
 label.Position=UDim2.new(0,18,1,-18) label.Size=UDim2.fromOffset(164,44)

@@ -23,6 +23,8 @@ function Pose.Step()
   local c=player.Character local start=c and c:GetAttribute("CoinActionStart")
   local t=start and now-start
   if t and t>=0 and t<Rules.Duration then
+   -- Play the original pose sequence twice as fast, matching the release timer.
+   t=t*1.1/Rules.Duration
    local root=c:FindFirstChild("HumanoidRootPart") local lower=c:FindFirstChild("LowerTorso")
    local upper=c:FindFirstChild("UpperTorso")
    if not root or not lower or not upper then continue end
@@ -40,7 +42,7 @@ function Pose.Step()
    local lift=(upperFrame*CFrame.new(.65,.15,-.8)).Position
    local flick=(upperFrame*CFrame.new(.5,-.1,-1.5)).Position
    local target=pouch
-   if t>Rules.GrabTime and t<.53 then target=pouch:Lerp(lift,smooth((t-Rules.GrabTime)/(.53-Rules.GrabTime)))
+   if t>.28 and t<.53 then target=pouch:Lerp(lift,smooth((t-.28)/(.53-.28)))
    elseif t>=.53 then target=lift:Lerp(flick,smooth((t-.53)/.15)) end
    local frame=upperFrame*shoulder.C0
    local delta=target-frame.Position local d=delta.Magnitude
@@ -55,7 +57,7 @@ function Pose.Step()
    local shoulderPose=aim(frame,elbowPoint)
    local elbowFrame=frame*shoulderPose*shoulder.C1:Inverse()*elbow.C0
    local elbowPose=aim(elbowFrame,target)
-   local weight=math.min(smooth(t/.16),smooth((Rules.Duration-t)/.22))
+   local weight=math.min(smooth(t/.16),smooth((1.1-t)/.22))
    for _,item in {{shoulder,shoulderPose},{elbow,elbowPose},{wrist,CFrame.Angles(math.rad(t>.53 and -35 or 5),0,0)}} do
     local j=item[1] saved[j]=j.Transform j.Transform=j.Transform:Lerp(item[2],weight)
    end
