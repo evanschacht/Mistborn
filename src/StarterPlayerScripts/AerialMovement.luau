@@ -96,7 +96,8 @@ function Air.Step(dt,settings,metalMoving,pull,push)
  RightHip=angles(48,0,8),LeftHip=angles(38,0,-8),RightKnee=angles(-72,0,0),LeftKnee=angles(-62,0,0),
  RightAnkle=angles(15,0,0),LeftAnkle=angles(15,0,0),
  RightShoulder=angles(0,0,90),LeftShoulder=angles(0,0,-90),RightElbow=CFrame.identity,LeftElbow=CFrame.identity,RightWrist=CFrame.identity,LeftWrist=CFrame.identity}
- local below=FlightPose.BelowTarget(r.Position,pull,push,flat.Magnitude,settings or {})
+ local bodyPull=pull and not pull:GetAttribute("IsCoin") and pull or nil
+ local below=FlightPose.BelowTarget(r.Position,bodyPull,push,flat.Magnitude,settings or {})
  squatBlend+=((below and 1 or 0)-squatBlend)*(1-math.exp(-10*dt))
  local squat=FlightPose.Squat()
  -- Aim both hands at the qualifying lower anchor, even when only one key is held.
@@ -109,7 +110,7 @@ function Air.Step(dt,settings,metalMoving,pull,push)
  for name,target in squat do pose[name]=pose[name]:Lerp(target,squatBlend) end
  c:SetAttribute("AerialSquatBlend",squatBlend)
  local flight=FlightPose.Build(flat.Magnitude,settings or {})
- flightBlend+=(FlightPose.Weight(flat.Magnitude,settings or {})-flightBlend)*(1-math.exp(-10*dt))
+ flightBlend+=((metalMoving and FlightPose.Weight(flat.Magnitude,settings or {}) or 0)-flightBlend)*(1-math.exp(-10*dt))
  for name,target in flight do pose[name]=pose[name]:Lerp(target,flightBlend) end
  FlightPose.Aim(pose,joints,r.CFrame,pull,push,flightBlend)
  c:SetAttribute("AerialFlightBlend",flightBlend)

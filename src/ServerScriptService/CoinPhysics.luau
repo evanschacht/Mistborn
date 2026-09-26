@@ -7,14 +7,14 @@ function Physics.Register(coin)
  states[coin]={controls={},ready=os.clock()+2,grounded=false,released=false}
  coin:SetAttribute("CoinState","Falling")
 end
-function Physics.ReleaseReady(coin,position)
+function Physics.ReleaseReady(coin,position,velocity)
  local state=states[coin]
  if not state or state.released then return end
  state.released=true state.ready=0 state.grounded=false state.supportNormal=nil
  coin.Anchored=false
  coin:SetAttribute("CoinContactCFrame",nil)
  coin.CFrame=CFrame.new(position)*CFrame.Angles(0,0,math.pi/2)
- coin.AssemblyLinearVelocity=Vector3.new(0,-2*Rules.FallSpeedScale,0)
+ coin.AssemblyLinearVelocity=velocity or coin.AssemblyLinearVelocity
  coin.AssemblyAngularVelocity=Vector3.zero
  coin:SetNetworkOwner(nil)
 end

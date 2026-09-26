@@ -57,7 +57,9 @@ remote.OnServerEvent:Connect(function(player,action,value)
   local coin,position=value.coin,value.position
   local root=player.Character and player.Character:FindFirstChild("HumanoidRootPart")
   if typeof(coin)=="Instance" and coins[coin]==player and root and typeof(position)=="Vector3" and (position-root.Position).Magnitude<=32 then
-   CoinPhysics.ReleaseReady(coin,position)
+   local velocity=value.velocity
+   if typeof(velocity)~="Vector3" or not (velocity.Magnitude<100000) then return end
+   CoinPhysics.ReleaseReady(coin,position,velocity)
   end
   return
  end
@@ -103,8 +105,8 @@ remote.OnServerEvent:Connect(function(player,action,value)
   gravityForce.Force=Vector3.new(0,-coin.AssemblyMass*workspace.Gravity*(Rules.FallSpeedScale^2-1),0)
   gravityForce.Parent=coin
   coin:SetNetworkOwner(player)
-  -- Drop vertically, independent of the character's flight speed or facing.
-  coin.AssemblyLinearVelocity=Vector3.new(0,-2*Rules.FallSpeedScale,0)
+  -- Preserve character momentum, with a small extra downward release speed.
+  coin.AssemblyLinearVelocity=root.AssemblyLinearVelocity+Vector3.new(0,-2*Rules.FallSpeedScale,0)
   coin.AssemblyAngularVelocity=Vector3.zero
   coins[coin]=player
   CoinPhysics.Register(coin)

@@ -111,6 +111,7 @@ function Motion.GetTarget(directionSign)
 end
 local root,humanoid,attachment,actuator
 local moving=false
+local bodyMoving=false
 local active=false
 
 local groundCommand
@@ -134,6 +135,7 @@ function Motion.Cancel()
  active=false
 
  moving=false
+ bodyMoving=false
  table.clear(targets)
  if actuator then actuator:Destroy() actuator=nil end
  if attachment then attachment:Destroy() attachment=nil end
@@ -175,11 +177,12 @@ function Motion.Start(part,directionSign)
  targets[directionSign==1 and 1 or -1]=part
  coinUpdate=0
  active=true
+ if directionSign~=1 or not part:GetAttribute("IsCoin") then bodyMoving=true end
  moving=true
  local velocity=root.AssemblyLinearVelocity
  local direction=Vector3.new(velocity.X,0,velocity.Z)
  if direction.Magnitude<0.1 then direction=(part.Position-root.Position)*(directionSign==1 and 1 or -1) end
- SlidePose.Step(character,humanoid,root,humanoid.FloorMaterial~=Enum.Material.Air,direction,targets[1],targets[-1])
+ SlidePose.Step(character,humanoid,root,bodyMoving and humanoid.FloorMaterial~=Enum.Material.Air,direction,targets[1],targets[-1])
  -- Keep the normal humanoid controller and gravity active.
  report()
  return true
@@ -206,7 +209,7 @@ function Motion.Resultant(position,pullPosition,pushPosition)
  return result
 end
 local function stepMotion(dt)
- Air.Step(dt,Motion.Settings,moving,targets[1],targets[-1])
+ Air.Step(dt,Motion.Settings,bodyMoving,targets[1],targets[-1])
  if not moving then return end
  if not root or not root.Parent or not humanoid or humanoid.Health<=0 then Motion.Cancel() return end
  for directionSign,part in pairs(targets) do
@@ -252,7 +255,7 @@ local function stepMotion(dt)
  -- anchor direction; no weight support or vertical/off-axis velocity damping.
  local horizontal=Vector3.new(current.X,0,current.Z)
  -- Air drag is separate from ground slide friction.
- if grounded then
+ if grounded and bodyMoving then
   -- Integrate the commanded speed rather than accumulating Humanoid friction losses.
   -- A substantial collision/deflection resets the command to actual motion.
   if groundCommand and (groundCommand-horizontal).Magnitude>math.max(8,groundCommand.Magnitude*0.5) then groundCommand=nil end
@@ -272,7 +275,7 @@ local function stepMotion(dt)
   humanoid.WalkSpeed=groundVelocity.Magnitude
   slideDirection=groundVelocity.Magnitude>0 and groundVelocity.Unit or Vector3.zero
   humanoid:Move(slideDirection,false)
- else
+ elseif not grounded then
   -- Do not let default no-input air steering fight the metal-driven momentum.
   groundCommand=nil
   humanoid.WalkSpeed=horizontal.Magnitude
@@ -280,17 +283,19 @@ local function stepMotion(dt)
 
  end
  actuator.Force=acceleration*root.AssemblyMass
- SlidePose.Step(root.Parent,humanoid,root,grounded,slideDirection,targets[1],targets[-1],slideInput,dt)
+ SlidePose.Step(root.Parent,humanoid,root,grounded and bodyMoving,slideDirection,targets[1],targets[-1],slideInput,dt)
 
- if not active and ((grounded and horizontal.Magnitude<=0.001) or (not grounded and horizontal.Magnitude<1)) then Motion.Cancel() end
+ if not active and (not bodyMoving or ((grounded and horizontal.Magnitude<=0.001) or (not grounded and horizontal.Magnitude<1))) then Motion.Cancel() end
 
 end
 RunService.PreSimulation:Connect(function(dt)
  stepMotion(dt)
+ local pull=targets[1]
+ if pull and pull:GetAttribute("IsCoin") and root and root.Parent then SlidePose.PointRight(root.Parent,humanoid,root,pull) end
  CoinPose.Step()
 end)
 RunService:BindToRenderStep("MetalGroundSlide",Enum.RenderPriority.Input.Value+1,function()
- if moving and humanoid and humanoid.Parent and humanoid.FloorMaterial~=Enum.Material.Air then
+ if bodyMoving and humanoid and humanoid.Parent and humanoid.FloorMaterial~=Enum.Material.Air then
   humanoid:Move(slideDirection,false)
  end
 end)

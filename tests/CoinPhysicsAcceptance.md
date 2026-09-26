@@ -16,3 +16,9 @@ Verified in Studio on 2026-09-25:
 - Inventory is capped at CoinRules.Capacity. Existing range cleanup and selection highlights still apply.
 
 Server control messages validate the existing tuning schema, target identity, range, player life, and a renewable control timeout. Dropped coins initially retain their release alignment window before server physics takes over.
+
+## Retrieval pose and inherited momentum regression
+- Grounded coin pull leaves MetalSliding false and preserves normal body joints; only right shoulder/elbow/wrist are overlaid.
+- Coin-only retrieval in freefall at 70 studs/s does not activate flight or downward squat blends.
+- Drop during forward movement and falling: preserve X/Z velocity and inherit Y velocity plus downward release speed; coin continues falling faster under existing 1.5x fall tuning.
+- Verify ordinary cube propulsion and its coasting poses remain active when also retrieving a coin.

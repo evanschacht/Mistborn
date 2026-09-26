@@ -30,9 +30,9 @@ remote.OnClientEvent:Connect(function(action,coinName)
  -- Use the current local position when the physical coin becomes visible,
  -- rather than the older character position received by the server.
  coin.CFrame=CFrame.new(root.Position-Vector3.yAxis)*CFrame.Angles(0,0,math.pi/2)
- coin.AssemblyLinearVelocity=Vector3.new(0,-2*Rules.FallSpeedScale,0)
+ coin.AssemblyLinearVelocity=root.AssemblyLinearVelocity+Vector3.new(0,-2*Rules.FallSpeedScale,0)
  coin.AssemblyAngularVelocity=Vector3.zero
- remote:FireServer("ReleaseReady",{coin=coin,position=coin.Position})
+ remote:FireServer("ReleaseReady",{coin=coin,position=coin.Position,velocity=coin.AssemblyLinearVelocity})
  local force=coin:FindFirstChild("CoinGravity")
  if force then force.Force=Vector3.new(0,-coin.AssemblyMass*workspace.Gravity*(Rules.FallSpeedScale^2-1),0) end
 end)

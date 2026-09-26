@@ -77,6 +77,17 @@ function Pose.Step(c,h,r,sliding,direction,pull,push,input,dt)
   end
  end
 end
+-- Overlay only the retrieval arm on the current Animator/air/slide pose.
+function Pose.PointRight(c,h,r,target)
+ if character~=c then bind(c,h,r) end
+ local shoulder=joints.RightShoulder
+ if not shoulder or not shoulder.Part0 then return end
+ local transform=aim(shoulder.Part0.CFrame*shoulder.C0,target.Position)
+ for name,value in {RightShoulder=transform,RightElbow=CFrame.identity,RightWrist=CFrame.identity} do
+  local j=joints[name]
+  if j then saved[j]=saved[j] or j.Transform j.Transform=value end
+ end
+end
 -- Remove the prior pose before Animator evaluates, so running/falling resumes cleanly.
 local beforeAnimation=RunService.PreAnimation:Connect(restore)
 function Pose.Destroy()
