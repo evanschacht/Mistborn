@@ -39,3 +39,8 @@ Server control messages validate the existing tuning schema, target identity, ra
 - Falling at 120 studs/s while moving horizontally: visible coin descends continuously and stays below the player (38 sampled frames); ground shadow tracks coin X/Z.
 - Release originates beneath the feet, clipped above solid ground. Local timestamped flight begins before acknowledgement; server compensates message age and checks swept contact.
 - Shadow is a noncolliding local surface marker and is removed with its coin.
+
+## Lightweight guided retrieval
+- Coin pulls use 4x acceleration, continuous cross-track velocity damping, and arrival braking; pull top speed remains the configured cap.
+- Live test from 300 studs with 80 studs/s lateral velocity: straightened by 0.25s, redirected after a 35-stud sidestep, stayed at 160 studs/s cap, retrieved in 1.98s.
+- Existing obstacle-contact checks run before guidance; blocked coins still transfer reaction to the player.

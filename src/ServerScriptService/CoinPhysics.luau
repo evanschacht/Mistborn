@@ -149,7 +149,7 @@ function Physics.Step(dt)
   end
   local velocity=coin.AssemblyLinearVelocity
   local drag=(1-math.exp(-(settings.CoinAirDrag or 1.2)*dt))/math.max(dt,.001)
-  local acceleration=-Vector3.new(velocity.X,0,velocity.Z)*drag
+  local acceleration=pull and Vector3.zero or -Vector3.new(velocity.X,0,velocity.Z)*drag
   for sign,action in state.controls do
    local delta=action.root.Position-coin.Position
    if delta.Magnitude>.01 then
@@ -158,8 +158,20 @@ function Physics.Step(dt)
     local strength=sign==1 and s.PullAcceleration or s.PushAcceleration
     strength*=Config.ForceScale(delta.Magnitude,s,sign,Config.AnchorRangeForSize(coin.Size,s.AnchorRange))
     local speed=sign==1 and s.PullSpeed or s.PushSpeed
-    local along=coin.AssemblyLinearVelocity:Dot(direction)
-    acceleration+=direction*math.min(strength,math.max(0,speed-along)/math.max(dt,.001))
+    local along=velocity:Dot(direction)
+    if sign==1 then
+     -- Lightweight retrieval: build speed quickly, brake near the hand, and
+     -- continuously remove cross-track velocity instead of orbiting the player.
+     strength*=Rules.PullAccelerationMultiplier
+     local targetSpeed=math.min(speed,math.sqrt(2*strength*math.max(0,delta.Magnitude-2)))
+     local forward=along+math.clamp(targetSpeed-along,-strength*dt,strength*dt)
+     local lateral=velocity-direction*along
+     coin.AssemblyLinearVelocity=direction*forward+lateral*math.exp(-Rules.PullSteering*dt)
+     -- Retrieval guidance supplies the lift needed for a straight path.
+     acceleration+=Vector3.yAxis*g*Rules.FallSpeedScale^2
+    else
+     acceleration+=direction*math.min(strength,math.max(0,speed-along)/math.max(dt,.001))
+    end
    end
   end
   thrust.Force=acceleration*coin:GetMass()
