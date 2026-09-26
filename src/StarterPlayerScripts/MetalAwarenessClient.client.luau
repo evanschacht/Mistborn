@@ -17,6 +17,12 @@ highlight.OutlineTransparency=0
 highlight.DepthMode=Enum.HighlightDepthMode.AlwaysOnTop
 highlight.Enabled=false
 highlight.Parent=effects
+local pushHighlight=highlight:Clone()
+pushHighlight.Name="PushTargetHighlight"
+pushHighlight.Parent=effects
+local pullHighlight=highlight:Clone()
+pullHighlight.Name="PullTargetHighlight"
+pullHighlight.Parent=effects
 local entries={}
 local selected
 local root
@@ -136,6 +142,8 @@ player.CharacterAdded:Connect(bindCharacter)
 player.CharacterRemoving:Connect(function()
  root=nil
  selectAnchor(nil)
+ pushHighlight.Enabled=false
+ pullHighlight.Enabled=false
  for _,entry in pairs(entries) do
   entry.outlineEnabled=false
   if entry.glow then entry.glow.Enabled=false end
@@ -149,6 +157,12 @@ end)
 if player.Character then task.spawn(bindCharacter,player.Character) end
 RunService.RenderStepped:Connect(function()
  if not root or not root.Parent then return end
+ local pushTarget=Motion.GetTarget(-1)
+ local pullTarget=Motion.GetTarget(1)
+ pushHighlight.Adornee=pushTarget
+ pullHighlight.Adornee=pullTarget
+ pushHighlight.Enabled=pushTarget~=nil and pushTarget~=selected and Motion.IsInRange(pushTarget,root.Position)
+ pullHighlight.Enabled=pullTarget~=nil and pullTarget~=selected and pullTarget~=pushTarget and Motion.IsInRange(pullTarget,root.Position)
  if selected and not Motion.IsInRange(selected,root.Position) then selectAnchor(nil) end
  if hovered and not Motion.IsInRange(hovered,root.Position) then
   hovered=nil
@@ -157,10 +171,21 @@ RunService.RenderStepped:Connect(function()
  for part,entry in pairs(entries) do
   local delta=part.Position-root.Position
   local enabled=Motion.IsInRange(part,root.Position)
-  local active=part==selected
+  local active=part==selected or part==pushTarget or part==pullTarget
   local coin=part:GetAttribute("IsCoin")==true
   if coin and not entry.glow then entry.glow=createCoinGlow(part) end
-  if entry.glow then entry.glow.Enabled=enabled end
+  if entry.glow then
+   entry.glow.Enabled=enabled
+   if entry.glowActive~=active then
+    entry.glowActive=active
+    for _,dot in entry.glow:GetChildren() do
+     if dot:IsA("Frame") then
+      local core=dot.Size.X.Offset==7
+      dot.BackgroundColor3=active and (core and Color3.fromRGB(255,250,210) or Color3.fromRGB(255,185,55)) or (core and Color3.fromRGB(235,255,255) or Color3.fromRGB(70,210,255))
+     end
+    end
+   end
+  end
   if entry.outlineEnabled~=enabled or entry.outlineActive~=active or entry.outlineSize~=part.Size then
    entry.outlineEnabled=enabled entry.outlineActive=active entry.outlineSize=part.Size
    local half=part.Size*0.5

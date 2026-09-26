@@ -100,6 +100,9 @@ function Motion.StepGround(velocity,acceleration,dt,powered,cap,friction,cutoff)
 end
 
 local targets={}
+function Motion.GetTarget(directionSign)
+ return targets[directionSign]
+end
 local root,humanoid,attachment,actuator
 local moving=false
 local active=false
