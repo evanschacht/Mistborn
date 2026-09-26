@@ -33,6 +33,31 @@ local function selectAnchor(part)
 end
 -- One soft ribbon avoids angle-dependent additive overlap between beam layers.
 local RADIAL_LAYERS=1
+-- A pixel-sized halo remains readable when the physical coin is sub-pixel.
+local function createCoinGlow(part)
+ local glow=Instance.new("BillboardGui")
+ glow.Name="CoinGlow_"..part.Name
+ glow.Adornee=part
+ glow.Size=UDim2.fromOffset(28,28)
+ glow.AlwaysOnTop=true
+ glow.LightInfluence=0
+ glow.Enabled=false
+ glow.Parent=effects
+ for _,layer in {{28,0.94},{24,0.9},{20,0.82},{16,0.65},{12,0.3},{7,0}} do
+  local dot=Instance.new("Frame")
+  dot.AnchorPoint=Vector2.new(0.5,0.5)
+  dot.Position=UDim2.fromScale(0.5,0.5)
+  dot.Size=UDim2.fromOffset(layer[1],layer[1])
+  dot.BackgroundColor3=layer[1]==7 and Color3.fromRGB(235,255,255) or Color3.fromRGB(70,210,255)
+  dot.BackgroundTransparency=layer[2]
+  dot.BorderSizePixel=0
+  dot.Parent=glow
+  local corner=Instance.new("UICorner")
+  corner.CornerRadius=UDim.new(1,0)
+  corner.Parent=dot
+ end
+ return glow
+end
 local function addAnchor(part)
  if not part:IsA("BasePart") or entries[part] then return end
  local entry={layers={},outline={}}
@@ -81,6 +106,7 @@ anchors.ChildAdded:Connect(addAnchor)
 anchors.ChildRemoved:Connect(function(part)
  local entry=entries[part]
  if entry then
+  if entry.glow then entry.glow:Destroy() end
   for _,item in entry.outline do item.edge:Destroy() end
   for _,layer in entry.layers do
    layer.line:Destroy()
@@ -112,6 +138,7 @@ player.CharacterRemoving:Connect(function()
  selectAnchor(nil)
  for _,entry in pairs(entries) do
   entry.outlineEnabled=false
+  if entry.glow then entry.glow.Enabled=false end
   for _,item in entry.outline do item.edge.Visible=false end
   for _,layer in entry.layers do
    layer.line.Enabled=false
@@ -132,6 +159,8 @@ RunService.RenderStepped:Connect(function()
   local enabled=Motion.IsInRange(part,root.Position)
   local active=part==selected
   local coin=part:GetAttribute("IsCoin")==true
+  if coin and not entry.glow then entry.glow=createCoinGlow(part) end
+  if entry.glow then entry.glow.Enabled=enabled end
   if entry.outlineEnabled~=enabled or entry.outlineActive~=active or entry.outlineSize~=part.Size then
    entry.outlineEnabled=enabled entry.outlineActive=active entry.outlineSize=part.Size
    local half=part.Size*0.5
