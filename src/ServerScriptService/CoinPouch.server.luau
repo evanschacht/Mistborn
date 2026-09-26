@@ -64,7 +64,9 @@ remote.OnServerEvent:Connect(function(player,action,value)
   if typeof(coin)=="Instance" and coins[coin]==player and root and typeof(position)=="Vector3" and (position-root.Position).Magnitude<=32 then
    local velocity=value.velocity
    if typeof(velocity)~="Vector3" or not (velocity.Magnitude<100000) then return end
-   CoinPhysics.ReleaseReady(coin,position,velocity)
+   local stamp=value.time
+   local age=typeof(stamp)=="number" and stamp==stamp and math.clamp(workspace:GetServerTimeNow()-stamp,0,.5) or 0
+   CoinPhysics.ReleaseReady(coin,position,velocity,age)
   end
   return
  end
@@ -97,7 +99,7 @@ remote.OnServerEvent:Connect(function(player,action,value)
   coin.Shape=Enum.PartType.Cylinder coin.Size=Rules.Size coin.Color=Color3.fromRGB(198,152,54) coin.Material=Enum.Material.Metal
   coin.CustomPhysicalProperties=PhysicalProperties.new(7.8,.65,0,100,100)
   coin:SetAttribute("IsCoin",true) coin:SetAttribute("CanMetalMove",true) coin:SetAttribute("CoinOwner",player.UserId)
-  local dropPosition=root.Position-Vector3.yAxis
+  local dropPosition=Rules.ReleasePosition(root)
   coin.CFrame=CFrame.new(dropPosition)*CFrame.Angles(0,0,math.pi/2)
   coin.Anchored=true coin.Transparency=1 coin.CanCollide=false
   coin.Parent=anchors

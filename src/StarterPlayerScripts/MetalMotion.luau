@@ -260,7 +260,7 @@ local function stepMotion(dt)
   -- A substantial collision/deflection resets the command to actual motion.
   if groundCommand and (groundCommand-horizontal).Magnitude>math.max(8,groundCommand.Magnitude*0.5) then groundCommand=nil end
   local startVelocity=(powered or slideInput.Y<0) and groundCommand or horizontal
-  local groundVelocity=Motion.StepGround(startVelocity or horizontal,Vector3.new(acceleration.X,0,acceleration.Z),dt,powered,topSpeed,slideInput.Y<0 and 0 or Motion.Settings.CoastDrag*(slideInput.Y>0 and 0.5 or 1),slideInput.Y<0 and 0 or Motion.Settings.StopSpeed)
+  local groundVelocity=Motion.StepGround(startVelocity or horizontal,Vector3.new(acceleration.X,0,acceleration.Z),dt,powered,topSpeed,powered and slideInput.Y<0 and 0 or Motion.Settings.CoastDrag*(slideInput.Y>0 and 0.5 or 1),powered and slideInput.Y<0 and 0 or Motion.Settings.StopSpeed)
   if slideInput.Y<0 then
    -- Braking wins over additional ground thrust, without reversing momentum.
    local speed=math.min(groundVelocity.Magnitude,(startVelocity or horizontal).Magnitude)

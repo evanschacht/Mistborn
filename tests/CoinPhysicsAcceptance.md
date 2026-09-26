@@ -33,3 +33,9 @@ Server control messages validate the existing tuning schema, target identity, ra
 - Live airborne release tests: horizontal speed ratio after 0.5s was 1.0 at drag 0, 0.546 at drag 1.2, and 0.128 at drag 4.
 - Three client render tests, 30+ frames each, had no upward position reversals; landing mesh, halo and beam endpoints agree.
 - Rendering uses a noncolliding local proxy; physics, range, push/pull targets, and retrieval remain server-authoritative.
+
+## Coast stop, drop shadow, and release latency
+- Starting at 80 studs/s, pull and hold S, release E while keeping S held: coasts to rest; powered S floor remains unchanged.
+- Falling at 120 studs/s while moving horizontally: visible coin descends continuously and stays below the player (38 sampled frames); ground shadow tracks coin X/Z.
+- Release originates beneath the feet, clipped above solid ground. Local timestamped flight begins before acknowledgement; server compensates message age and checks swept contact.
+- Shadow is a noncolliding local surface marker and is removed with its coin.

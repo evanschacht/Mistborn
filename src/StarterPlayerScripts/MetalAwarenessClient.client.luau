@@ -29,6 +29,7 @@ local root
 local hovered
 local Motion=require(script.Parent:WaitForChild("MetalMotion"))
 local Config=require(game:GetService("ReplicatedStorage"):WaitForChild("MetalTuningConfig"))
+local CoinRules=require(game.ReplicatedStorage.CoinRules)
 local heldKeys={}
 local function visual(part)
  local entry=part and entries[part]
@@ -116,6 +117,7 @@ anchors.ChildAdded:Connect(addAnchor)
 anchors.ChildRemoved:Connect(function(part)
  local entry=entries[part]
  if entry then
+  if entry.shadow then entry.shadow:Destroy() end
   if entry.visual then entry.visual:Destroy() end
   if entry.glow then entry.glow:Destroy() end
   for _,item in entry.outline do item.edge:Destroy() end
@@ -173,6 +175,10 @@ RunService.RenderStepped:Connect(function(dt)
   hovered=nil
   effects:SetAttribute("HoveredAnchor","")
  end
+ local exclusions={effects}
+ for part in entries do if part:GetAttribute("IsCoin") then table.insert(exclusions,part) end end
+ for _,p in Players:GetPlayers() do if p.Character then table.insert(exclusions,p.Character) end end
+ local groundQuery=RaycastParams.new() groundQuery.FilterDescendantsInstances=exclusions groundQuery.RespectCanCollide=true
  for part,entry in pairs(entries) do
   if part:GetAttribute("IsCoin") then
    if not entry.visual then
@@ -185,13 +191,38 @@ RunService.RenderStepped:Connect(function(dt)
     for _,layer in entry.layers do layer.endpoint.Parent=proxy end
    end
    local proxy=entry.visual
-   local visible=part.Transparency<1
+   local localFlight=part:GetAttribute("LocalFlightTime")
+   local pending=localFlight and part.Transparency==1
+   local visible=part.Transparency<1 or pending
    -- Render-only smoothing absorbs packet cadence; physical coins stay authoritative.
-   if not entry.wasVisible or part.Anchored then proxy.CFrame=part.CFrame
+   if pending or (visible and not part.Anchored and part:GetAttribute("BallisticFlight") and part:GetAttribute("FlightTime")) then
+    local prefix=localFlight and "LocalFlight" or "Flight"
+    local origin=part:GetAttribute(prefix.."Origin")
+    local target=CoinRules.Flight(origin,part:GetAttribute(prefix.."Velocity"),part:GetAttribute(prefix.."Gravity"),part:GetAttribute(prefix.."Drag"),workspace:GetServerTimeNow()-part:GetAttribute(prefix.."Time")+math.min(dt,.04))
+    local previous=entry.wasVisible and proxy.Position or origin
+    local delta=target-previous
+    local hit=delta.Magnitude>.001 and workspace:Raycast(previous,delta,groundQuery)
+    if hit then target=hit.Position+hit.Normal*.06 end
+    proxy.CFrame=CFrame.new(target)*part.CFrame.Rotation
+   elseif not entry.wasVisible or part.Anchored then proxy.CFrame=part.CFrame
    else proxy.CFrame=proxy.CFrame:Lerp(part.CFrame,1-math.exp(-25*dt)) end
    proxy.Transparency=visible and 0 or 1 entry.wasVisible=visible
    part.LocalTransparencyModifier=1
    if selected==part then highlight.Adornee=proxy end
+   if not entry.shadow then
+    local shadow=Instance.new("Part") shadow.Name="CoinDropShadow_"..part.Name
+    shadow.Shape=Enum.PartType.Cylinder shadow.Size=Vector3.new(.025,3,3)
+    shadow.Color=Color3.fromRGB(12,18,25) shadow.Material=Enum.Material.SmoothPlastic
+    shadow.Anchored=true shadow.CanCollide=false shadow.CanQuery=false shadow.CanTouch=false shadow.CastShadow=false
+    shadow.Transparency=1 shadow.Parent=effects entry.shadow=shadow
+   end
+   local hit=visible and workspace:Raycast(proxy.Position+Vector3.yAxis*.1,Vector3.new(0,-10000,0),groundQuery)
+   if hit and Motion.IsInRange(part,root.Position) then
+    local normal=hit.Normal
+    local tangent=normal:Cross(math.abs(normal.Y)>.99 and Vector3.xAxis or Vector3.yAxis).Unit
+    entry.shadow.CFrame=CFrame.fromMatrix(hit.Position+normal*.035,normal,tangent,normal:Cross(tangent))
+    entry.shadow.Transparency=.5
+   else entry.shadow.Transparency=1 end
   end
   local shown=visual(part)
   local delta=shown.Position-root.Position

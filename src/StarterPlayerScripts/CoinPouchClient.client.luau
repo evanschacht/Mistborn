@@ -36,8 +36,14 @@ remote.OnClientEvent:Connect(function(action,coinName)
  -- Use the current local position when the physical coin becomes visible,
  -- rather than the older character position received by the server.
  local v=root.AssemblyLinearVelocity
+ local now=workspace:GetServerTimeNow()
+ coin:SetAttribute("LocalFlightOrigin",Rules.ReleasePosition(root))
+ coin:SetAttribute("LocalFlightVelocity",Vector3.new(v.X,math.min(v.Y,0)-2*Rules.FallSpeedScale,v.Z))
+ coin:SetAttribute("LocalFlightGravity",(motionScript:GetAttribute("Gravity") or 60)*Rules.FallSpeedScale^2)
+ coin:SetAttribute("LocalFlightDrag",motionScript:GetAttribute("CoinAirDrag") or 1.2)
+ coin:SetAttribute("LocalFlightTime",now)
  remote:FireServer("ReleaseReady",{
-  coin=coin,position=root.Position-Vector3.yAxis,
+  coin=coin,position=Rules.ReleasePosition(root),time=workspace:GetServerTimeNow(),
   velocity=Vector3.new(v.X,math.min(v.Y,0)-2*Rules.FallSpeedScale,v.Z),
  })
  -- The server releases the coin once; never teleport a moving client-owned coin.

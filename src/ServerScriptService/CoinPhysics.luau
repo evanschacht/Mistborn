@@ -10,17 +10,31 @@ function Physics.Register(coin)
  states[coin]={controls={},ready=os.clock()+2,grounded=false,released=false}
  coin:SetAttribute("CoinState","Falling")
 end
-function Physics.ReleaseReady(coin,position,velocity)
+function Physics.ReleaseReady(coin,position,velocity,age)
  local state=states[coin]
  if not state or state.released then return end
  state.released=true state.ready=0 state.grounded=false state.supportNormal=nil
  coin:SetAttribute("CoinContactCFrame",nil)
- coin.CFrame=CFrame.new(position)*CFrame.Angles(0,0,math.pi/2)
+ local settings=tuning[coin:GetAttribute("CoinOwner")] or require(game.ReplicatedStorage.MetalTuningPreset).values
+ local g=settings.Gravity*Rules.FallSpeedScale^2 local drag=settings.CoinAirDrag or 1.2
+ local v=velocity or coin:GetAttribute("ReleaseVelocity") or Vector3.zero
+ v=Vector3.new(v.X,math.min(v.Y,-2*Rules.FallSpeedScale),v.Z)
+ local nextPosition,nextVelocity=Rules.Flight(position,v,g,drag,age or 0)
+ local params=RaycastParams.new() params.RespectCanCollide=true
+ local exclude={coin}
+ for _,p in Players:GetPlayers() do if p.Character then table.insert(exclude,p.Character) end end
+ params.FilterDescendantsInstances=exclude
+ local delta=nextPosition-position
+ local hit=delta.Magnitude>.001 and workspace:Raycast(position,delta,params)
+ if hit then nextPosition=hit.Position+hit.Normal*.06 nextVelocity=Vector3.zero end
+ coin.CFrame=CFrame.new(nextPosition)*CFrame.Angles(0,0,math.pi/2)
+ coin:SetAttribute("FlightOrigin",nextPosition) coin:SetAttribute("FlightVelocity",nextVelocity)
+ coin:SetAttribute("FlightGravity",g) coin:SetAttribute("FlightDrag",drag)
+ coin:SetAttribute("FlightTime",workspace:GetServerTimeNow()) coin:SetAttribute("BallisticFlight",not hit)
  coin.Anchored=false
  coin:SetNetworkOwner(nil)
  coin.CanCollide=true coin.Transparency=0
- local v=velocity or coin:GetAttribute("ReleaseVelocity") or Vector3.zero
- coin.AssemblyLinearVelocity=Vector3.new(v.X,math.min(v.Y,-2*Rules.FallSpeedScale),v.Z)
+ coin.AssemblyLinearVelocity=nextVelocity
  coin.AssemblyAngularVelocity=Vector3.zero
  coin:SetNetworkOwner(nil)
 end
@@ -81,6 +95,7 @@ function Physics.Step(dt)
   coin:SetAttribute("CoinPushReaction",0)
   coin:SetAttribute("CoinPullReaction",0)
   local settings=control and control.settings or tuning[coin:GetAttribute("CoinOwner")] or require(game.ReplicatedStorage.MetalTuningPreset).values
+  if control or state.grounded or settings.CoinAirDrag~=coin:GetAttribute("FlightDrag") or settings.Gravity*Rules.FallSpeedScale^2~=coin:GetAttribute("FlightGravity") then coin:SetAttribute("BallisticFlight",false) end
   local g=settings.Gravity
   gravity.Force=Vector3.new(0,-coin:GetMass()*(g*Rules.FallSpeedScale^2-workspace.Gravity),0)
   if pull then
