@@ -38,7 +38,7 @@ function Config.SizeScale(size)
  return (size.X*size.Y*size.Z)^(1/3)/6
 end
 function Config.AnchorRangeForSize(size,baseRange)
- return math.max(0,baseRange)*Config.SizeScale(size)
+ return math.max(0,baseRange)*math.clamp(Config.SizeScale(size),0.8,1.1)
 end
 function Config.LineStyle(size,distance,baseRange)
  local range=Config.AnchorRangeForSize(size,baseRange)

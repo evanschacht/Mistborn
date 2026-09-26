@@ -1,7 +1,9 @@
 local c=require(game.ReplicatedStorage.MetalTuningConfig)
-assert(math.abs(c.AnchorRangeForSize(Vector3.one*3,100)-50)<.001)
+assert(math.abs(c.AnchorRangeForSize(Vector3.one*3,100)-80)<.001)
 assert(math.abs(c.AnchorRangeForSize(Vector3.one*6,100)-100)<.001)
-assert(math.abs(c.AnchorRangeForSize(Vector3.one*12,100)-200)<.001)
+assert(math.abs(c.AnchorRangeForSize(Vector3.one*12,100)-110)<.001)
+assert(math.abs(c.AnchorRangeForSize(Vector3.new(.1,.6,.6),750)-600)<.001)
+assert(math.abs(c.AnchorRangeForSize(Vector3.one*1000,750)-825)<.001)
 assert(c.AnchorRangeForSize(Vector3.one*12,0)==0)
 local s={AnchorRange=100,ForceNearClamp=5,ForceFarClamp=150,PullFalloff=1,PushFalloff=1}
 for _,sign in {-1,1} do
