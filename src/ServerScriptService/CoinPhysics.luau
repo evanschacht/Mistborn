@@ -11,10 +11,13 @@ function Physics.ReleaseReady(coin,position,velocity)
  local state=states[coin]
  if not state or state.released then return end
  state.released=true state.ready=0 state.grounded=false state.supportNormal=nil
- coin.Anchored=false
  coin:SetAttribute("CoinContactCFrame",nil)
  coin.CFrame=CFrame.new(position)*CFrame.Angles(0,0,math.pi/2)
- coin.AssemblyLinearVelocity=velocity or coin.AssemblyLinearVelocity
+ coin.Anchored=false
+ coin:SetNetworkOwner(nil)
+ coin.CanCollide=true coin.Transparency=0
+ local v=velocity or coin:GetAttribute("ReleaseVelocity") or Vector3.zero
+ coin.AssemblyLinearVelocity=Vector3.new(v.X,math.min(v.Y,-2*Rules.FallSpeedScale),v.Z)
  coin.AssemblyAngularVelocity=Vector3.zero
  coin:SetNetworkOwner(nil)
 end

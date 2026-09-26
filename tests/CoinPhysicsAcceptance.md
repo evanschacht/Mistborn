@@ -22,3 +22,8 @@ Server control messages validate the existing tuning schema, target identity, ra
 - Coin-only retrieval in freefall at 70 studs/s does not activate flight or downward squat blends.
 - Drop during forward movement and falling: preserve X/Z velocity and inherit Y velocity plus downward release speed; coin continues falling faster under existing 1.5x fall tuning.
 - Verify ordinary cube propulsion and its coasting poses remain active when also retrieving a coin.
+
+## Ballistic release regression
+- Falling, rising, and initially stationary drops: single server-owned launch, nonpositive vertical release speed, constant horizontal velocity and monotonically decreasing vertical velocity during unobstructed free flight.
+- Passed 31+ Heartbeat samples per case; no lateral or upward impulses.
+- Pending coin remains hidden and noncolliding until authoritative release; dropped coins cannot collide with one another.

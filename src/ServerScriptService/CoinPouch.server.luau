@@ -94,6 +94,7 @@ remote.OnServerEvent:Connect(function(player,action,value)
   coin:SetAttribute("IsCoin",true) coin:SetAttribute("CanMetalMove",true) coin:SetAttribute("CoinOwner",player.UserId)
   local dropPosition=root.Position-Vector3.yAxis
   coin.CFrame=CFrame.new(dropPosition)*CFrame.Angles(0,0,math.pi/2)
+  coin.Anchored=true coin.Transparency=1 coin.CanCollide=false
   coin.Parent=anchors
   for _,part in c:GetDescendants() do if part:IsA("BasePart") then
    local nc=Instance.new("NoCollisionConstraint") nc.Part0=coin nc.Part1=part nc.Parent=coin
@@ -102,11 +103,16 @@ remote.OnServerEvent:Connect(function(player,action,value)
   local gravityForce=Instance.new("VectorForce") gravityForce.Name="CoinGravity"
   gravityForce.Attachment0=gravityAttachment gravityForce.RelativeTo=Enum.ActuatorRelativeTo.World
   gravityForce.ApplyAtCenterOfMass=true
-  gravityForce.Force=Vector3.new(0,-coin.AssemblyMass*workspace.Gravity*(Rules.FallSpeedScale^2-1),0)
+  gravityForce.Force=Vector3.new(0,-coin:GetMass()*workspace.Gravity*(Rules.FallSpeedScale^2-1),0)
   gravityForce.Parent=coin
-  coin:SetNetworkOwner(player)
+  for other in coins do
+   if other.Parent then
+    local nc=Instance.new("NoCollisionConstraint") nc.Part0=coin nc.Part1=other nc.Parent=coin
+   end
+  end
   -- Preserve character momentum, with a small extra downward release speed.
-  coin.AssemblyLinearVelocity=root.AssemblyLinearVelocity+Vector3.new(0,-2*Rules.FallSpeedScale,0)
+  local v=root.AssemblyLinearVelocity
+  coin:SetAttribute("ReleaseVelocity",Vector3.new(v.X,math.min(v.Y,0)-2*Rules.FallSpeedScale,v.Z))
   coin.AssemblyAngularVelocity=Vector3.zero
   coins[coin]=player
   CoinPhysics.Register(coin)

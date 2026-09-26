@@ -29,12 +29,13 @@ remote.OnClientEvent:Connect(function(action,coinName)
  if not root or not coin.Parent then return end
  -- Use the current local position when the physical coin becomes visible,
  -- rather than the older character position received by the server.
- coin.CFrame=CFrame.new(root.Position-Vector3.yAxis)*CFrame.Angles(0,0,math.pi/2)
- coin.AssemblyLinearVelocity=root.AssemblyLinearVelocity+Vector3.new(0,-2*Rules.FallSpeedScale,0)
- coin.AssemblyAngularVelocity=Vector3.zero
- remote:FireServer("ReleaseReady",{coin=coin,position=coin.Position,velocity=coin.AssemblyLinearVelocity})
- local force=coin:FindFirstChild("CoinGravity")
- if force then force.Force=Vector3.new(0,-coin.AssemblyMass*workspace.Gravity*(Rules.FallSpeedScale^2-1),0) end
+ local v=root.AssemblyLinearVelocity
+ remote:FireServer("ReleaseReady",{
+  coin=coin,position=root.Position-Vector3.yAxis,
+  velocity=Vector3.new(v.X,math.min(v.Y,0)-2*Rules.FallSpeedScale,v.Z),
+ })
+ -- The server releases the coin once; never teleport a moving client-owned coin.
+
 end)
 local gui=Instance.new("ScreenGui") gui.Name="CoinCounter" gui.ResetOnSpawn=false gui.Parent=player:WaitForChild("PlayerGui")
 local label=Instance.new("TextLabel") label.Name="Coins" label.AnchorPoint=Vector2.new(0,1)
