@@ -131,6 +131,7 @@ RunService.RenderStepped:Connect(function()
   local delta=part.Position-root.Position
   local enabled=Motion.IsInRange(part,root.Position)
   local active=part==selected
+  local coin=part:GetAttribute("IsCoin")==true
   if entry.outlineEnabled~=enabled or entry.outlineActive~=active or entry.outlineSize~=part.Size then
    entry.outlineEnabled=enabled entry.outlineActive=active entry.outlineSize=part.Size
    local half=part.Size*0.5
@@ -145,9 +146,9 @@ RunService.RenderStepped:Connect(function()
     end
     item.edge.CFrame=CFrame.lookAt(start,finish)
     item.edge.Length=(finish-start).Magnitude
-    item.edge.Thickness=active and 3 or 1.5
-    item.edge.Color3=active and Color3.fromRGB(175,240,255) or Color3.fromRGB(65,155,215)
-    item.edge.Transparency=active and 0.05 or 0.4
+    item.edge.Thickness=coin and (active and 5 or 3.5) or (active and 3 or 1.5)
+    item.edge.Color3=coin and (active and Color3.fromRGB(235,255,255) or Color3.fromRGB(150,230,255)) or (active and Color3.fromRGB(175,240,255) or Color3.fromRGB(65,155,215))
+    item.edge.Transparency=coin and 0 or (active and 0.05 or 0.4)
     item.edge.Visible=enabled
    end
   end
