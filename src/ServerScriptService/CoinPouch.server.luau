@@ -73,18 +73,18 @@ remote.OnServerEvent:Connect(function(player,action,value)
   if player.Character~=c or not root.Parent or h.Health<=0 then return end
   local coin=Instance.new("Part") coin.Name="Coin_"..player.UserId.."_"..tostring(math.floor(now*1000))
   coin.Shape=Enum.PartType.Cylinder coin.Size=Rules.Size coin.Color=Color3.fromRGB(198,152,54) coin.Material=Enum.Material.Metal
-  coin.CustomPhysicalProperties=PhysicalProperties.new(7.8,.65,.12,100,100)
+  coin.CustomPhysicalProperties=PhysicalProperties.new(7.8,.65,0,100,100)
   coin:SetAttribute("IsCoin",true) coin:SetAttribute("CanMetalMove",false) coin:SetAttribute("CoinOwner",player.UserId)
   local hand=c:FindFirstChild("RightHand") or c:FindFirstChild("Right Arm")
-  coin.CFrame=CFrame.new(hand and hand.Position or root.Position)*root.CFrame.Rotation*CFrame.Angles(0,0,math.pi/2)
+  coin.CFrame=CFrame.new(hand and hand.Position or root.Position)*CFrame.Angles(0,0,math.pi/2)
   coin.Parent=anchors
   for _,part in c:GetDescendants() do if part:IsA("BasePart") then
    local nc=Instance.new("NoCollisionConstraint") nc.Part0=coin nc.Part1=part nc.Parent=coin
   end end
   coin:SetNetworkOwner(nil)
-  local forward=Vector3.new(root.CFrame.LookVector.X,0,root.CFrame.LookVector.Z).Unit
-  coin.AssemblyLinearVelocity=root.AssemblyLinearVelocity+forward*10+Vector3.yAxis*9
-  coin.AssemblyAngularVelocity=root.CFrame.RightVector*12
+  -- Drop vertically, independent of the character's flight speed or facing.
+  coin.AssemblyLinearVelocity=Vector3.new(0,-2,0)
+  coin.AssemblyAngularVelocity=Vector3.zero
   coins[coin]=player
  end)
 end)
