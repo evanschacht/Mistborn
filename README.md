@@ -23,7 +23,7 @@ Studio cannot test real teleports. In a fresh single-player Play session, choosi
 
 Q and E lock their targets independently when pressed. Selecting another object does not change an ongoing push or pull. Selected, pushed, and pulled objects can all be highlighted simultaneously.
 
-The expandable Metal Tuning panel groups movement, forces, sensing, coins, and pose settings. Each slider supports editable bounds and an individual reset. It also includes a speedometer toggle and shared tuning save.
+The expandable Metal Tuning panel groups movement, forces, sensing, coins, and pose settings. Each slider supports editable bounds and an individual reset. Resets restore the saved settings used at join, including saved slider bounds; Reset all also restores the saved speedometer setting. It also includes a speedometer toggle and shared tuning save.
 
 ## Code map
 
@@ -39,7 +39,7 @@ The expandable Metal Tuning panel groups movement, forces, sensing, coins, and p
 | [MetalSlidePose](src/StarterPlayerScripts/MetalSlidePose.luau), [AerialFlightPose](src/StarterPlayerScripts/AerialFlightPose.luau), [CoinTossPose](src/StarterPlayerScripts/CoinTossPose.luau) | Procedural character poses and arm overlays |
 | [CoinPouchClient](src/StarterPlayerScripts/CoinPouchClient.client.luau) | Drop input, inventory UI, release prediction and server handoff |
 | [CoinPouch server](src/ServerScriptService/CoinPouch.server.luau), [CoinPhysics](src/ServerScriptService/CoinPhysics.luau) | Coin creation, inventory, authoritative motion, contact and retrieval |
-| [MetalTuningConfig](src/ReplicatedStorage/MetalTuningConfig.luau) | Factory defaults, schema/migration, sensing range and force/line scaling |
+| [MetalTuningConfig](src/ReplicatedStorage/MetalTuningConfig.luau) | Schema/migration fallbacks, sensing range and force/line scaling |
 | [MetalTuningPreset](src/ReplicatedStorage/MetalTuningPreset.luau) | Saved tuning values, slider bounds and speedometer setting |
 | [MetalTuningPanel](src/StarterPlayerScripts/MetalTuningPanel.client.luau) | Categorized tuning UI |
 | [MetalTuningPersistence](src/ServerScriptService/MetalTuningPersistence.server.luau), [MetalTuningMaster](src/ServerScriptService/MetalTuningMaster.luau) | Shared DataStore tuning and revision handling |
@@ -58,6 +58,6 @@ There are three separate kinds of save:
 2. **Studio Save** writes the local place. Keep its project scripts synchronized with `src/` and capture the intended tuning in `MetalTuningPreset` for a portable checkpoint.
 3. **Git commit and push** backs up the full project. It does not publish a new Roblox experience version.
 
-The current checked-in tuning is in `MetalTuningPreset`; factory Reset defaults in `MetalTuningConfig` intentionally differ. A successfully loaded DataStore master can override the preset. See the handoff guide for persistence limitations and test caveats.
+The current checked-in tuning is in `MetalTuningPreset`, which provides both join settings and reset defaults. A successfully loaded or saved DataStore master replaces both together. Local previews and failed saves leave reset defaults unchanged. `MetalTuningConfig.Specs` retains fallback values for schema migration. See the handoff guide for persistence limitations and test caveats.
 
 This is a prototype with Studio-based checks, not an automated CI-tested release. Historical test results are evidence of past runs, not proof that the current environment has been retested.

@@ -1,5 +1,6 @@
 local Players=game:GetService("Players")
 local RunService=game:GetService("RunService")
+local HttpService=game:GetService("HttpService")
 local player=Players.LocalPlayer
 local Motion={}
 local Config=require(game:GetService("ReplicatedStorage"):WaitForChild("MetalTuningConfig"))
@@ -53,16 +54,19 @@ function Motion.SetRange(key,low,high)
  return false
 end
 function Motion.ResetSetting(key)
+ local saved=Motion.GetSavedSettings()
+ if not saved then return false end
  for _,spec in Motion.SettingSpecs do
   if spec.key==key then
-   script:SetAttribute(key.."Min",nil) script:SetAttribute(key.."Max",nil)
-   Motion.Settings[key]=spec.default
-   return
+   script:SetAttribute(key.."Min",saved.ranges[key][1])
+   script:SetAttribute(key.."Max",saved.ranges[key][2])
+   Motion.Settings[key]=saved.values[key]
+   return true
   end
  end
 end
 function Motion.ResetSettings()
- for _,spec in Motion.SettingSpecs do Motion.ResetSetting(spec.key) end
+ return Motion.ApplySettings(Motion.GetSavedSettings())
 end
 function Motion.ApplySettings(data)
  local clean=Config.Validate(data)
@@ -76,7 +80,22 @@ function Motion.ApplySettings(data)
  script:SetAttribute("ShowSpeedometer",clean.showSpeedometer)
  return true
 end
+-- Keep defaults separate from local previews and share them across require contexts.
+-- JSON decoding/validation returns fresh tables so callers cannot mutate the baseline.
+function Motion.GetSavedSettings()
+ local encoded=script:GetAttribute("SavedTuningDefaults")
+ if typeof(encoded)~="string" then return nil end
+ local ok,data=pcall(function() return HttpService:JSONDecode(encoded) end)
+ return ok and Config.Validate(data) or nil
+end
+function Motion.ApplySavedSettings(data)
+ local clean=Config.Validate(data)
+ if not clean then return false end
+ script:SetAttribute("SavedTuningDefaults",HttpService:JSONEncode(clean))
+ return Motion.ApplySettings(clean)
+end
 function Motion.Snapshot(showSpeedometer)
+ if showSpeedometer==nil then showSpeedometer=script:GetAttribute("ShowSpeedometer") end
  local data={values={},ranges={},showSpeedometer=showSpeedometer==true}
  for _,spec in Motion.SettingSpecs do
   data.values[spec.key]=Motion.Settings[spec.key]
@@ -85,7 +104,11 @@ function Motion.Snapshot(showSpeedometer)
  end
  return data
 end
-Motion.ApplySettings(require(game:GetService("ReplicatedStorage"):WaitForChild("MetalTuningPreset")))
+-- A Studio inspector can require this ModuleScript in a separate environment.
+-- Initialize once; subsequent requires must preserve the live preview and defaults.
+if not Motion.GetSavedSettings() then
+ Motion.ApplySavedSettings(require(game:GetService("ReplicatedStorage"):WaitForChild("MetalTuningPreset")))
+end
 -- Constant acceleration until the cap; exponential coasting friction; independent stop cutoff.
 function Motion.StepGround(velocity,acceleration,dt,powered,cap,friction,cutoff)
  if powered then

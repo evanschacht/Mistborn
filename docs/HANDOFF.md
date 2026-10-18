@@ -55,11 +55,13 @@ Guided retrieval uses CoinRules' 4x pull acceleration, lateral velocity damping 
 
 ## Tuning and persistence
 
-- `MetalTuningConfig.Specs`: factory Reset defaults, bounds/validation and migration of older saves.
+- `MetalTuningConfig.Specs`: schema fallbacks, bounds/validation and migration of older saves. These values are not the player's reset baseline.
 - `MetalTuningPreset`: portable saved values, slider ranges and speedometer flag. At checkpoint 6a0a85b: pull/push acceleration 750, pull falloff 0.4, push falloff 0.1, both speed caps 160, base range 750, gravity 60, ground/air speed 40, jump height 8, coin air drag 1.2. Read the file for the complete authoritative snapshot.
-- `MetalMotion.Snapshot(showSpeedometer)`: current client values/ranges. Preserve the actual UI speedometer flag when capturing a full preset.
+- `MetalMotion.ApplySavedSettings(data)`: validates and applies an authoritative preset/master and updates the reset baseline. `ApplySettings(data)` applies a local preview only; slider edits and failed saves must not change defaults. The serialized `SavedTuningDefaults` ModuleScript attribute shares the baseline across runtime/Studio require contexts, and initialization only installs the preset when no valid baseline exists. A second inspection-context require must not overwrite ongoing edits or a loaded master.
+- `ResetSetting(key)` restores that saved value and its saved bounds. `ResetSettings()` restores every saved value/range and the saved speedometer flag. The panel synchronizes its speedometer flag with MetalMotion, so reset changes visibility as well as the snapshot.
+- `MetalMotion.GetSavedSettings()` returns an independent validated copy of the reset baseline. `Snapshot(showSpeedometer)` returns current client values/ranges and uses the current speedometer attribute when the argument is omitted; an explicit boolean remains supported.
 - `MetalTuningPersistence`: DataStore `MistbornMetalTuning_v1`, key `master`, revisioned shared record replicated through `MetalTuningMasterState`. Other servers poll approximately every 30 seconds. Studio permits saving; live saves require the user owner or group rank 255. Saves are throttled.
-- If DataStore loading succeeds, its master can override the fallback preset. Save Tuning failure must be reported, not described as a successful global save. The last recorded tuning checkpoint had unavailable external save service; local preset/place/Git backup succeeded. Recheck service availability rather than assuming it is still unavailable.
+- If DataStore loading succeeds, its master replaces the fallback preset for both live settings and reset defaults. Load returns the accepted revision so delayed replicated records cannot undo that load. Increasing replicated master revisions update both together, including after a successful Save Tuning. Save acknowledgements do not promote an unversioned client snapshot over a newer master. Save Tuning failure must be reported, not described as a successful global save. The last recorded tuning checkpoint had unavailable external save service; local preset/place/Git backup succeeded. Recheck service availability rather than assuming it is still unavailable.
 
 New controls belong in the appropriate existing collapsed category, or a new category if necessary. Include schema validation/migration, persistence, reset, bounds, and runtime consumers when adding a setting.
 
@@ -71,6 +73,7 @@ Tests are individual Studio scripts, not a single CLI suite. Client probes gener
 
 - `SlideBrakeFloor.client.luau` expects the old coasting 30-stud/s floor, which conflicts with the fixed behavior. Its direct helper calls also omit the newer powered argument.
 - `MasterTuning.spec.luau` hardcodes an old range of 290; the saved preset now has 750. Derive expectations from the fixture before using it as a regression gate.
+- `TuningPersistence.client.luau` expects the former factory reset values/ranges. Player resets now restore the saved preset or accepted master; use the saved baseline for those assertions.
 - Other old probes may assume earlier tuning/API defaults. Audit relevant tests before running or interpreting failures.
 
 The earlier documentation-only handoff did not include new gameplay tests. Consult current entry-flow test evidence separately, and do not claim a current multiplayer, performance, or publication pass from old notes. Procedural poses and visual proxies run locally; verify remote-player appearance in a multi-client test before promising replicated animation behavior.

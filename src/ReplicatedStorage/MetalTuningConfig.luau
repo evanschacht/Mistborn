@@ -1,4 +1,6 @@
 local Config={}
+-- Schema and migration fallbacks. Player resets use the saved preset/master
+-- baseline managed by MetalMotion, including its saved slider bounds.
 Config.Specs={
  {key="CoinAirDrag",title="Coin Air Drag",min=0,max=8,step=0.05,default=1.2,unit="",hint="Horizontal air resistance on coins. Higher values make dropped coins trail farther behind; 0 preserves momentum."},
  {key="AirPoseThreshold",title="Flight pose start speed",min=0,max=300,step=1,default=30,unit=" studs/s",hint="Horizontal speed above which the flight pose blends in."},

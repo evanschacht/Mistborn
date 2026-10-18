@@ -25,7 +25,7 @@ remote.OnServerInvoke=function(player,action,payload)
  local allowed=canSave(player)
  if action=="Load" then
   local ok=master.data~=nil or master:Load()
-  return {ok=ok,data=master.data,canSave=allowed}
+  return {ok=ok,data=master.data,revision=master.revision,canSave=allowed}
  end
  if action~="Save" then return {ok=false,message="Unknown request"} end
  if not allowed then return {ok=false,message="Only the game owner can save master tuning"} end

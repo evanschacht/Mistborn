@@ -2,14 +2,19 @@ local Players=game:GetService("Players")
 local RunService=game:GetService("RunService")
 local UIS=game:GetService("UserInputService")
 local Motion=require(script.Parent:WaitForChild("MetalMotion"))
+local motionScript=script.Parent.MetalMotion
 local remote=game:GetService("ReplicatedStorage"):WaitForChild("MetalTuningPersistence",10)
 local loadMessage="Project preset loaded"
 local canSave=false
+local loadedRevision=-1
 if remote then
  local ok,response=pcall(function() return remote:InvokeServer("Load") end)
  if ok and typeof(response)=="table" then canSave=response.canSave==true end
- if ok and response.ok then
-  if response.data and Motion.ApplySettings(response.data) then loadMessage="Master tuning loaded" end
+ if ok and typeof(response)=="table" and response.ok then
+  if response.data and Motion.ApplySavedSettings(response.data) then
+   loadMessage="Master tuning loaded"
+   loadedRevision=typeof(response.revision)=="number" and response.revision or 0
+  end
  else loadMessage="Could not load master tuning; using preset" end
 end
 local screen=Instance.new("ScreenGui")
@@ -38,13 +43,17 @@ local speedText=make("TextLabel",{Name="Speed",Position=UDim2.fromOffset(4,20),S
 make("TextLabel",{Position=UDim2.fromOffset(0,68),Size=UDim2.new(1,0,0,20),BackgroundTransparency=1,Text="studs / second",TextColor3=Color3.fromRGB(165,207,228),Font=Enum.Font.Gotham,TextSize=10},speedometer)
 local speedToggle=make("TextButton",{Name="SpeedometerToggle",Position=UDim2.fromOffset(12,35),Size=UDim2.new(1,-24,0,26),BackgroundColor3=Color3.fromRGB(39,57,77),Text="Speedometer: OFF",TextColor3=Color3.fromRGB(220,233,245),Font=Enum.Font.GothamMedium,TextSize=12,BorderSizePixel=0},content)
 make("UICorner",{CornerRadius=UDim.new(0,6)},speedToggle)
-screen:SetAttribute("ShowSpeedometer",script.Parent.MetalMotion:GetAttribute("ShowSpeedometer")==true)
+screen:SetAttribute("ShowSpeedometer",motionScript:GetAttribute("ShowSpeedometer")==true)
 local function showSpeedometer()
  local on=screen:GetAttribute("ShowSpeedometer")==true
+ motionScript:SetAttribute("ShowSpeedometer",on)
  speedometer.Visible=on speedToggle.Text=on and "Speedometer: ON" or "Speedometer: OFF"
  speedToggle.BackgroundColor3=on and Color3.fromRGB(31,99,133) or Color3.fromRGB(39,57,77)
 end
 screen:GetAttributeChangedSignal("ShowSpeedometer"):Connect(showSpeedometer)
+motionScript:GetAttributeChangedSignal("ShowSpeedometer"):Connect(function()
+ screen:SetAttribute("ShowSpeedometer",motionScript:GetAttribute("ShowSpeedometer")==true)
+end)
 showSpeedometer()
 speedToggle.Activated:Connect(function() screen:SetAttribute("ShowSpeedometer",not speedometer.Visible) end)
 local elapsed=0
@@ -166,12 +175,14 @@ make("UICorner",{CornerRadius=UDim.new(0,6)},save)
 local status=make("TextLabel",{Name="SaveStatus",Position=UDim2.new(0,12,1,-26),Size=UDim2.new(1,-24,0,22),BackgroundTransparency=1,Text=loadMessage,TextWrapped=true,TextColor3=Color3.fromRGB(165,207,228),Font=Enum.Font.Gotham,TextSize=10},content)
 local saving=false
 local masterState=game:GetService("ReplicatedStorage"):WaitForChild("MetalTuningMasterState",10)
-local revision=-1
+-- Ignore replicated records older than the master already returned by Load.
+local revision=loadedRevision
+if revision>=0 then screen:SetAttribute("MasterRevision",revision) end
 local function applyMaster()
  if not masterState then return end
  local ok,record=pcall(function() return game:GetService("HttpService"):JSONDecode(masterState.Value) end)
  if not ok or typeof(record)~="table" or typeof(record.revision)~="number" or record.revision<=revision then return end
- if not Motion.ApplySettings(record.data) then return end
+ if not Motion.ApplySavedSettings(record.data) then return end
  revision=record.revision
  screen:SetAttribute("MasterRevision",revision)
  screen:SetAttribute("ShowSpeedometer",record.data.showSpeedometer)
@@ -194,6 +205,9 @@ save.Activated:Connect(function()
   return remote:InvokeServer("Save",snapshot)
  end)
  local success=ok and typeof(response)=="table" and response.ok
+ -- The replicated revision is the authoritative saved record. If it has not
+ -- arrived yet, Changed applies it (and its reset baseline) when it does.
+ if success then applyMaster() end
  status.Text=success and "Master saved • applies to everyone" or (ok and response.message or "Save failed; please retry")
  status.TextColor3=success and Color3.fromRGB(137,233,175) or Color3.fromRGB(255,155,135)
  screen:SetAttribute("LastSaveSucceeded",success==true)
