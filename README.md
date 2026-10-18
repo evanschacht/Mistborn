@@ -2,9 +2,13 @@
 
 A Roblox Studio prototype for steel pushing, iron pulling, momentum-based movement, and throwable/retrievable coins.
 
-Open **Mistborn-Anchor-Prototype.rbxl** in Roblox Studio and press Play. No external build step is required to play the saved place. The `src/` directory contains readable exports of the project scripts; editing those files alone does not update the place.
+Open **Mistborn-Anchor-Prototype.rbxl** in Roblox Studio and press Play. Choose **Dev Mode** from the entry menu to play the existing development map. No external build step is required to play the saved place. The `src/` directory contains readable exports of the project scripts; editing those files alone does not update the place.
 
 Start with [the handoff guide](docs/HANDOFF.md) before changing the game. [AGENTS.md](AGENTS.md) describes the checkpoint requirements.
+
+**Tutorial Level** opens an isolated tutorial map: an empty baseplate with a huge medieval stone wall. In a published Roblox client, the server reserves a fresh server of this same place and teleports the player there; no second place ID is needed. The destination builds its tutorial world before spawning the player. Dev Mode keeps the existing development map in the current server.
+
+Studio cannot test real teleports. In a fresh single-player Play session, choosing Tutorial Level previews the isolated tutorial map locally in that test server. Stop Play to return to the saved development map. Studio preview is rejected if Dev Mode has already started or other players are present. Published server travel still needs verification in the Roblox client.
 
 ## Controls
 
@@ -25,6 +29,9 @@ The expandable Metal Tuning panel groups movement, forces, sensing, coins, and p
 
 | Location | Responsibility |
 | --- | --- |
+| [EntryMenu](src/ReplicatedFirst/EntryMenu.client.luau) | Initial Dev Mode / Tutorial Level menu, loading/error feedback, camera and input gating |
+| [EntryFlow](src/ServerScriptService/EntryFlow.server.luau), [EntryFlowConfig](src/ServerScriptService/EntryFlowConfig.luau) | Server admission, same-place reserved tutorial travel, join validation and manual respawn |
+| [TutorialWorld](src/ServerStorage/TutorialWorld.luau) | Tutorial baseplate, spawn and medieval stone wall builder |
 | [MetalMotion](src/StarterPlayerScripts/MetalMotion.luau) | Player forces, target locking, sliding, tuning snapshots, coin reaction gates |
 | [MetalAwarenessClient](src/StarterPlayerScripts/MetalAwarenessClient.client.luau) | Selection, lines, highlights, coin visual proxies and drop shadows |
 | [AerialMovement](src/StarterPlayerScripts/AerialMovement.luau) | Ground and air locomotion, gravity/jump tuning, pose coordination |
@@ -40,6 +47,7 @@ The expandable Metal Tuning panel groups movement, forces, sensing, coins, and p
 | [MetalForceGeometry](src/ReplicatedStorage/MetalForceGeometry.luau), [CoinRules](src/ReplicatedStorage/CoinRules.luau) | Shared geometry, coin constants and ballistic calculations |
 | [map/anchors.json](map/anchors.json) | Exported anchor layout |
 | [assets/coin-pouch](assets/coin-pouch/README.md) | Pouch generator, Blender/GLB assets and primitive manifest |
+| [assets/tutorial-wall](assets/tutorial-wall/README.md) | Tutorial wall generator, optimized mesh exports and Roblox primitive manifest |
 | [tests](tests) | Studio probes, acceptance notes and historical result snapshots |
 
 ## Saving and verification

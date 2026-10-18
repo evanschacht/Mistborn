@@ -1,0 +1,22 @@
+{
+  "blenderVersion": "5.2.1 LTS",
+  "meshObjects": 1,
+  "vertices": 8592,
+  "triangles": 12888,
+  "materials": 8,
+  "uvLayers": 1,
+  "dimensionsStuds": [
+    300.0,
+    36.19999694824219,
+    100.0
+  ],
+  "pivot": [
+    0.0,
+    0.0,
+    0.0
+  ],
+  "sourcePartCount": 1074,
+  "originalScenePreserved": "Scene",
+  "finalGlbBytes": 909892,
+  "blendBytes": 1326627
+}

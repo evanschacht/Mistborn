@@ -1,6 +1,6 @@
 # Agent handoff
 
-Documentation reviewed against repository source on 2026-10-18. This handoff is documentation-only; it does not change gameplay or claim a fresh Studio playtest.
+Documentation reviewed against repository source on 2026-10-18, including the entry menu and tutorial routing additions. This guide describes the architecture; current test evidence must be recorded separately from the historical checks below.
 
 ## First steps
 
@@ -16,6 +16,19 @@ The last gameplay/settings checkpoint before this handoff is `6a0a85b` (saved sh
 Directories under `src/` mirror Roblox services. Files ending `.client.luau` are LocalScripts; `.server.luau` are Scripts; remaining `.luau` files are ModuleScripts. Instance names omit file suffixes. StarterPlayerScripts belongs under StarterPlayer. Runtime PlayerScripts are copies, so changes made only there do not persist into Edit mode.
 
 Update the Edit data model and matching source exports together. Do not export injected test scripts or Roblox-generated Play scripts as project source. Save the complete place using ordinary Save after gameplay changes. Documentation-only changes do not require rewriting an unchanged place file.
+
+## Entry menu and tutorial server routing
+
+- `ReplicatedFirst.EntryMenu` creates the initial menu without requiring a character or waiting for StarterPlayerScripts. It connects `ReplicatedStorage.EntryFlow.Status` before sending the `ChooseMode` Ready handshake. Choices are `Dev` and `Tutorial`; status values are Ready, Loading, Entered and Error. Error responses permit retry; repeated Ready handshakes replay the current server status.
+- `ServerScriptService.EntryFlow` sets `Players.CharacterAutoLoads=false` before any yield. Keep that property false in the saved Edit model as well. Characters spawn only after server admission; `Player.EntryMode` records Dev or Tutorial, and respawns preserve that mode. Existing coin and aerial scripts bind through CharacterAdded and support the initial absence of a character.
+- Dev Mode admits the player into the existing map. A published Tutorial Level selection uses `TeleportService:TeleportAsync(game.PlaceId, {player}, options)` with `ShouldReserveServer=true`. Its versioned TeleportData identifies Tutorial, source place, user and request. No additional place needs to be created or published.
+- Automatic tutorial arrival requires a reserved server (`PrivateServerId` is nonempty and `PrivateServerOwnerId` is zero), matching server-provided join source place and valid routing data. A public server never replaces its development map for a tutorial choice. Tutorial build is shared by concurrent valid arrivals; Dev admission is blocked once the tutorial build starts.
+- `ServerStorage.TutorialWorld.Build(parent)` synchronously returns a root Model and SpawnLocation. EntryFlow first builds under ServerStorage, validates the result, then swaps the map before admitting a character. It preserves Terrain and Camera instances, clears old terrain only after construction succeeds, and preserves the identity of `workspace.MetalAnchors` while emptying its contents because coin scripts capture that Folder. The original map remains available for rollback until the swap succeeds.
+- Studio uses an explicit isolated preview in a fresh single-player Play session. It refuses replacement after Dev admission or while multiple players are present. A failed preview restores the original map and allows another choice. Ending Play discards the preview and restores Edit. Studio preview does not verify actual reserved-server travel.
+- Explicit teleport failures return Error and release both choices for retry; request IDs reject stale failures. The 45-second teleport watchdog releases the busy UI but retains the unresolved transfer token and asks the player to rejoin. Roblox provides no teleport cancellation, so this prevents a late transfer racing a new mode choice or Dev spawn; only TeleportInitFailed or a thrown TeleportAsync failure clears that token. Character loads have a 25-second UI watchdog; a still-running LoadCharacterAsync retains its flight token so retries cannot overlap it, and a late successful completion can still enter the player. Choice cooldown rejections replay a status after the cooldown instead of silently stranding a disabled menu.
+- Once a player has entered and the menu has closed, failed death respawns retry automatically after 2, 4 and 8 seconds. Exhausting those three retries disconnects with a clear request to rejoin; a respawn engine call that remains unresolved for 25 seconds uses the same recovery because it cannot safely be overlapped or cancelled. Death during an in-flight load retains the respawn request until that load completes. A successful living character resets the retry count.
+
+Run `tests/EntryFlow.spec.luau` as a temporary server Script to validate tutorial join acceptance and rejection. Integration checks must cover the initial menu with no character, Dev admission without map replacement, a fresh Studio tutorial preview, death/respawn in each mode, rejection of incompatible Studio multiplayer preview, and retry after a reported failure. Real same-place reserved-server travel requires a published Roblox client; do not report Studio preview as that release check. See [Roblox's teleport documentation](https://create.roblox.com/docs/projects/teleport).
 
 ## Behavior to preserve
 
@@ -60,7 +73,7 @@ Tests are individual Studio scripts, not a single CLI suite. Client probes gener
 - `MasterTuning.spec.luau` hardcodes an old range of 290; the saved preset now has 750. Derive expectations from the fixture before using it as a regression gate.
 - Other old probes may assume earlier tuning/API defaults. Audit relevant tests before running or interpreting failures.
 
-No new gameplay tests were run for this documentation handoff. Do not claim a current multiplayer, performance, or publication pass from old notes. Procedural poses and visual proxies run locally; verify remote-player appearance in a multi-client test before promising replicated animation behavior.
+The earlier documentation-only handoff did not include new gameplay tests. Consult current entry-flow test evidence separately, and do not claim a current multiplayer, performance, or publication pass from old notes. Procedural poses and visual proxies run locally; verify remote-player appearance in a multi-client test before promising replicated animation behavior.
 
 For a gameplay change, test the affected path plus nearby regressions: simultaneous push/pull, release momentum, S coasting stop, free versus grounded coin reactions, moving/falling release, guided retrieval/obstruction, inventory cap, and range cleanup as appropriate. Check Output for errors and preserve the user's tuning afterward.
 
